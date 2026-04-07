@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>韓國旅遊記錄 App – 靜態模板</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet">
   <style>
     /* ==========================================================================
        1. CSS 變數系統 (完全與 index.html 一致)
@@ -60,6 +61,11 @@
       --radius-lg: 16px;
       --radius-xl: 24px;
       --radius-2xl: 32px;
+
+      /* 字體家族 */
+      --font-base:   'Noto Sans TC', sans-serif;
+      --font-title:  'Noto Serif TC', serif;
+      --font-number: 'DM Sans', sans-serif;
     }
 
     /* ==========================================================================
@@ -73,7 +79,7 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+      font-family: var(--font-base);
       background-color: var(--color-bg-body);
       color: var(--color-text-main);
       display: flex;
@@ -819,11 +825,15 @@
       font-size: var(--text-base);
       font-weight: 700;
       margin-bottom: 4px;
+    }
+    .expense-row__date {
+      font-size: var(--text-sm);
+      color: var(--color-text-light);
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
+      font-family: var(--font-number);
     }
-    .expense-row__date { font-size: var(--text-sm); color: var(--color-text-light); }
     .expense-row__price {
       font-size: var(--text-lg);
       font-weight: 700;
@@ -1238,11 +1248,11 @@
     }
     .weather-card::before { display: none; }
     /* 天氣狀態：晴天 */
-    .weather-card--sunny { background: #FFF9E6; border-color: #EAD98C; }
+    .weather-card--sunny { background: #FFFFFF; border-color: #E5D480; }
     /* 天氣狀態：多雲 */
-    .weather-card--cloudy { background: #EEF2F5; border-color: #C4D2DA; }
+    .weather-card--cloudy { background: #FFFFFF; border-color: #C4D2DA; }
     /* 天氣狀態：下雨 */
-    .weather-card--rainy { background: #EAF3F8; border-color: #AECFE0; }
+    .weather-card--rainy { background: #FFFFFF; border-color: #AECFE0; }
     .weather-card__top {
       display: flex;
       align-items: center;
@@ -1293,78 +1303,92 @@
     }
     .weather-chip svg { width: 13px; height: 13px; flex-shrink: 0; }
     .weather-chip--rain {
-      background: #D6E9F5;
-      color: #2C6A96;
+      background: #C8D8E4;
+      color: #4A6C7E;
+      border: 1px solid #A8C0CE;
     }
     .weather-chip--outfit {
-      background: #D2EBE0;
-      color: #2A6B4A;
+      background: #D4C8DE;
+      color: #6A5880;
+      border: 1px solid #B8A8CC;
     }
 
     /* ==========================================================================
-       17. 記帳頁：純 CSS 圓餅圖
+       17. 記帳頁：分類血條統計（遊戲 HUD 風格）
        ========================================================================== */
-    .pie-card {
-      margin: 0 1.5rem 1.5rem;
-      background: var(--color-bg-card);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-xl);
-      padding: 1.25rem 1rem;
+    .expense-cats {
+      margin: 0 1.5rem 1.25rem;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 1.25rem;
+      gap: 9px;
     }
-    .pie-wrap { display: contents; }
-    .pie-chart {
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      background: conic-gradient(
-        #7D9BAA   0deg  101deg,
-        #A5C0CB 101deg  270deg,
-        #4E7A9E 270deg  321deg,
-        #2E5A6E 321deg  360deg
-      );
+    .expense-cat-hint {
+      font-size: 11px;
+      color: var(--color-text-light);
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+      font-family: var(--font-base);
+      text-align: center;
     }
-    .pie-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px 16px;
-      width: 100%;
-    }
-    .pie-grid__item {
+    .expense-cat-item {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 4px;
     }
-    .pie-grid__header {
+    .expense-cat-header {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 7px;
     }
-    .pie-grid__dot {
-      width: 10px; height: 10px;
+    .expense-cat-dot {
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       flex-shrink: 0;
-      display: inline-block;
     }
-    .pie-grid__name {
+    .expense-cat-name {
       font-size: var(--text-xs);
       font-weight: 600;
       color: var(--color-text-muted);
+      flex: 1;
+      font-family: var(--font-base);
     }
-    .pie-grid__amt {
-      font-size: 13px;
+    .expense-cat-amt {
+      font-size: var(--text-xs);
       font-weight: 700;
       color: var(--color-text-main);
-      padding-left: 16px;
+      font-family: var(--font-number);
     }
-    .pie-grid__pct {
-      font-size: var(--text-xs);
+    .expense-cat-pct {
+      font-size: 11px;
       color: var(--color-text-light);
-      padding-left: 16px;
+      font-family: var(--font-number);
+      min-width: 30px;
+      text-align: right;
+    }
+    .expense-cat-track {
+      height: 7px;
+      background: var(--color-bg-input);
+      border-radius: 99px;
+      overflow: hidden;
+      position: relative;
+    }
+    .expense-cat-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: var(--bar-color, var(--color-primary));
+      opacity: 0.78;
+      position: relative;
+    }
+    .expense-cat-fill::after {
+      content: '';
+      position: absolute;
+      top: 1px;
+      left: 5px;
+      right: 5px;
+      height: 2px;
+      border-radius: 99px;
+      background: rgba(255,255,255,0.45);
     }
 
     /* ==========================================================================
@@ -1429,6 +1453,37 @@
       color: var(--color-primary);
       font-weight: 500;
     }
+
+    /* ==========================================================================
+       字體套用規則
+       ========================================================================== */
+    /* 旅遊名稱大標題 → Noto Serif TC */
+    .page-trip-header__title,
+    .trip-main-card__title,
+    .home-summary__title,
+    .app-header__title {
+      font-family: var(--font-title);
+    }
+
+    /* 數字、金額、時間、日期 → DM Sans */
+    .expense-total__amount,
+    .flight-card__iata,
+    .flight-card__time,
+    .weather-card__temp,
+    .exchange-value,
+    .home-stat__num,
+    .expense-row__price,
+    .date-item__number,
+    .expense-cat-amt,
+    .expense-cat-pct {
+      font-family: var(--font-number);
+    }
+
+    /* Navbar Tab 文字 → Noto Sans TC */
+    .tab-item__label,
+    .home-subtab-label {
+      font-family: var(--font-base);
+    }
   </style>
 </head>
 <body>
@@ -1458,10 +1513,6 @@
           2026/06/10 - 2026/06/14
         </div>
       </div>
-
-      <!-- 首頁 Sub-tab Radio 控制器 -->
-      <input type="radio" name="home-tabs" id="home-tab-todo" class="home-subtab-ctrl" checked>
-      <input type="radio" name="home-tabs" id="home-tab-prep" class="home-subtab-ctrl">
 
       <div class="section-px">
 
@@ -1558,6 +1609,10 @@
             </div>
           </div>
         </div>
+
+        <!-- 待辦/事前準備 Tab 控制器（與 .home-subtabs 同層才能用 ~ 選擇器） -->
+        <input type="radio" name="home-tabs" id="home-tab-todo" class="home-subtab-ctrl" checked>
+        <input type="radio" name="home-tabs" id="home-tab-prep" class="home-subtab-ctrl">
 
         <!-- 雙 Tab：待辦事項 / 事前準備 -->
         <div class="home-subtabs">
@@ -1731,23 +1786,50 @@
           <div class="weather-card__top">
             <!-- 太陽＋雲 彩色 SVG -->
             <div class="weather-card__icon-wrap">
-              <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <!-- 太陽光芒 -->
-                <line x1="18" y1="2" x2="18" y2="5.5" stroke="#F5B731" stroke-width="2.2" stroke-linecap="round"/>
-                <line x1="18" y1="30.5" x2="18" y2="34" stroke="#F5B731" stroke-width="2.2" stroke-linecap="round"/>
-                <line x1="2" y1="18" x2="5.5" y2="18" stroke="#F5B731" stroke-width="2.2" stroke-linecap="round"/>
-                <line x1="30.5" y1="18" x2="34" y2="18" stroke="#F5B731" stroke-width="2.2" stroke-linecap="round"/>
-                <line x1="6.1" y1="6.1" x2="8.6" y2="8.6" stroke="#F5B731" stroke-width="2.2" stroke-linecap="round"/>
-                <line x1="27.4" y1="27.4" x2="29.9" y2="29.9" stroke="#F5B731" stroke-width="2.2" stroke-linecap="round"/>
-                <line x1="29.9" y1="6.1" x2="27.4" y2="8.6" stroke="#F5B731" stroke-width="2.2" stroke-linecap="round"/>
-                <line x1="8.6" y1="27.4" x2="6.1" y2="29.9" stroke="#F5B731" stroke-width="2.2" stroke-linecap="round"/>
+              <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <radialGradient id="sg3" cx="35%" cy="28%" r="65%">
+                    <stop offset="0%" stop-color="#FFF8B8"/>
+                    <stop offset="60%" stop-color="#FFD040"/>
+                    <stop offset="100%" stop-color="#F5A820"/>
+                  </radialGradient>
+                  <radialGradient id="cg3" cx="28%" cy="22%" r="72%">
+                    <stop offset="0%" stop-color="#FFFFFF"/>
+                    <stop offset="100%" stop-color="#BDD4E8"/>
+                  </radialGradient>
+                  <filter id="sf2">
+                    <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#FFB02035"/>
+                  </filter>
+                  <filter id="cf2">
+                    <feDropShadow dx="0" dy="2.5" stdDeviation="2" flood-color="#6890A828"/>
+                  </filter>
+                </defs>
+                <!-- 太陽光芒（粗圓頭，可愛插畫感） -->
+                <line x1="12" y1="2" x2="12" y2="6" stroke="#FFD040" stroke-width="2.6" stroke-linecap="round"/>
+                <line x1="2" y1="12" x2="6" y2="12" stroke="#FFD040" stroke-width="2.6" stroke-linecap="round"/>
+                <line x1="4.1" y1="4.1" x2="6.9" y2="6.9" stroke="#FFD040" stroke-width="2.6" stroke-linecap="round"/>
+                <line x1="19.9" y1="4.1" x2="17.1" y2="6.9" stroke="#FFD040" stroke-width="2.6" stroke-linecap="round"/>
+                <line x1="4.1" y1="19.9" x2="6.9" y2="17.1" stroke="#FFD040" stroke-width="2.6" stroke-linecap="round"/>
                 <!-- 太陽本體 -->
-                <circle cx="18" cy="18" r="6.5" fill="#F5B731"/>
-                <!-- 前景雲 -->
-                <ellipse cx="22" cy="22" rx="7" ry="4.5" fill="#B0C8D8"/>
-                <circle cx="18.5" cy="20.5" r="3.8" fill="#C8DCEC"/>
-                <circle cx="23.5" cy="20" r="4.2" fill="#B8CDD9"/>
-                <ellipse cx="21" cy="23" rx="7.5" ry="3.5" fill="#C8DCEC"/>
+                <circle cx="12" cy="12" r="8.2" fill="url(#sg3)" filter="url(#sf2)"/>
+                <!-- 太陽表情：眼睛 -->
+                <circle cx="9.4" cy="11.5" r="1.1" fill="#C07820"/>
+                <circle cx="14.6" cy="11.5" r="1.1" fill="#C07820"/>
+                <!-- 太陽表情：微笑 -->
+                <path d="M9.2 14.2 Q12 16.5 14.8 14.2" stroke="#C07820" stroke-width="1.1" stroke-linecap="round" fill="none"/>
+                <!-- 太陽高光 -->
+                <ellipse cx="9.8" cy="9.2" rx="2.4" ry="1.5" fill="rgba(255,255,255,0.52)"/>
+                <!-- 雲陰影底座 -->
+                <ellipse cx="30" cy="40" rx="12" ry="3" fill="#A0C0D8" opacity="0.22"/>
+                <!-- 雲體底部（圓角矩形補色） -->
+                <rect x="18" y="29" width="24" height="10" rx="5" fill="url(#cg3)"/>
+                <!-- 雲的蓬鬆球（由後至前，越來越大） -->
+                <circle cx="22" cy="28" r="6" fill="url(#cg3)" filter="url(#cf2)"/>
+                <circle cx="31" cy="24.5" r="8" fill="url(#cg3)" filter="url(#cf2)"/>
+                <circle cx="39.5" cy="27.5" r="6.5" fill="url(#cg3)" filter="url(#cf2)"/>
+                <!-- 雲高光 -->
+                <ellipse cx="29.5" cy="22.5" rx="4" ry="2.5" fill="rgba(255,255,255,0.72)"/>
+                <ellipse cx="22" cy="26.5" rx="2.2" ry="1.4" fill="rgba(255,255,255,0.6)"/>
               </svg>
             </div>
             <div class="weather-card__main">
@@ -1759,14 +1841,14 @@
             <!-- 降雨機率 chip -->
             <span class="weather-chip weather-chip--rain">
               <svg viewBox="0 0 16 16" fill="none" width="13" height="13">
-                <path d="M8 2 C8 2 3.5 7.5 3.5 10.5 a4.5 4.5 0 0 0 9 0 C12.5 7.5 8 2 8 2z" fill="#4E7A9E" opacity=".8"/>
+                <path d="M8 2 C8 2 3.5 7.5 3.5 10.5 a4.5 4.5 0 0 0 9 0 C12.5 7.5 8 2 8 2z" fill="#4A6C7E" opacity=".9"/>
               </svg>
               降雨 15%
             </span>
             <!-- 穿著建議 chip -->
             <span class="weather-chip weather-chip--outfit">
               <svg viewBox="0 0 16 16" fill="none" width="13" height="13">
-                <path d="M5 2 L2 5 L5 6 L5 14 L11 14 L11 6 L14 5 L11 2 L9 4 L7 4 Z" fill="#5E9977" opacity=".85"/>
+                <path d="M5 2 L2 5 L5 6 L5 14 L11 14 L11 6 L14 5 L11 2 L9 4 L7 4 Z" fill="#6A5880" opacity=".9"/>
               </svg>
               短袖＋薄外套
             </span>
@@ -1954,29 +2036,55 @@
         <p class="expense-total__sub">~ TWD 1,542</p>
       </div>
 
-      <!-- 純 CSS 圓餅圖 -->
-      <div class="pie-card">
-        <div class="pie-chart"></div>
-        <div class="pie-grid">
-          <div class="pie-grid__item">
-            <div class="pie-grid__header"><span class="pie-grid__dot" style="background:#7D9BAA"></span><span class="pie-grid__name">餐飲</span></div>
-            <span class="pie-grid__amt">₩18,000</span>
-            <span class="pie-grid__pct">28%</span>
+      <!-- 分類血條統計（遊戲 HUD 風格提示） -->
+      <div class="expense-cats">
+        <p class="expense-cat-hint">── 花費分類 ──</p>
+
+        <div class="expense-cat-item">
+          <div class="expense-cat-header">
+            <span class="expense-cat-dot" style="background:#7D9BAA"></span>
+            <span class="expense-cat-name">餐飲</span>
+            <span class="expense-cat-amt">₩18,000</span>
+            <span class="expense-cat-pct">28%</span>
           </div>
-          <div class="pie-grid__item">
-            <div class="pie-grid__header"><span class="pie-grid__dot" style="background:#A5C0CB"></span><span class="pie-grid__name">購物</span></div>
-            <span class="pie-grid__amt">₩30,000</span>
-            <span class="pie-grid__pct">47%</span>
+          <div class="expense-cat-track">
+            <div class="expense-cat-fill" style="width:28%;--bar-color:#7D9BAA"></div>
           </div>
-          <div class="pie-grid__item">
-            <div class="pie-grid__header"><span class="pie-grid__dot" style="background:#4E7A9E"></span><span class="pie-grid__name">交通</span></div>
-            <span class="pie-grid__amt">₩9,000</span>
-            <span class="pie-grid__pct">14%</span>
+        </div>
+
+        <div class="expense-cat-item">
+          <div class="expense-cat-header">
+            <span class="expense-cat-dot" style="background:#B09080"></span>
+            <span class="expense-cat-name">購物</span>
+            <span class="expense-cat-amt">₩30,000</span>
+            <span class="expense-cat-pct">47%</span>
           </div>
-          <div class="pie-grid__item">
-            <div class="pie-grid__header"><span class="pie-grid__dot" style="background:#2E5A6E"></span><span class="pie-grid__name">景點</span></div>
-            <span class="pie-grid__amt">₩7,000</span>
-            <span class="pie-grid__pct">11%</span>
+          <div class="expense-cat-track">
+            <div class="expense-cat-fill" style="width:47%;--bar-color:#B09080"></div>
+          </div>
+        </div>
+
+        <div class="expense-cat-item">
+          <div class="expense-cat-header">
+            <span class="expense-cat-dot" style="background:#849E88"></span>
+            <span class="expense-cat-name">交通</span>
+            <span class="expense-cat-amt">₩9,000</span>
+            <span class="expense-cat-pct">14%</span>
+          </div>
+          <div class="expense-cat-track">
+            <div class="expense-cat-fill" style="width:14%;--bar-color:#849E88"></div>
+          </div>
+        </div>
+
+        <div class="expense-cat-item">
+          <div class="expense-cat-header">
+            <span class="expense-cat-dot" style="background:#9888AA"></span>
+            <span class="expense-cat-name">景點</span>
+            <span class="expense-cat-amt">₩7,000</span>
+            <span class="expense-cat-pct">11%</span>
+          </div>
+          <div class="expense-cat-track">
+            <div class="expense-cat-fill" style="width:11%;--bar-color:#9888AA"></div>
           </div>
         </div>
       </div>
@@ -1998,8 +2106,8 @@
               <svg viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg>
             </div>
             <div>
-              <h4 class="expense-row__title">松亭三代豬肉湯飯 <span class="expense-badge expense-badge--cash">現金</span></h4>
-              <p class="expense-row__date">6月10日 · 餐飲</p>
+              <h4 class="expense-row__title">松亭三代豬肉湯飯</h4>
+              <p class="expense-row__date"><span class="expense-badge expense-badge--cash">現金</span>06/10 · 餐飲</p>
             </div>
           </div>
           <div class="expense-row__price">₩ 9,000</div>
@@ -2012,8 +2120,8 @@
               <svg viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>
             </div>
             <div>
-              <h4 class="expense-row__title">Olive Young 美妝 <span class="expense-badge expense-badge--card">刷卡</span></h4>
-              <p class="expense-row__date">6月10日 · 購物</p>
+              <h4 class="expense-row__title">Olive Young 美妝</h4>
+              <p class="expense-row__date"><span class="expense-badge expense-badge--card">刷卡</span>06/10 · 購物</p>
             </div>
           </div>
           <div class="expense-row__price">₩ 45,000</div>
@@ -2026,8 +2134,8 @@
               <svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="16" rx="2"></rect><path d="M4 11h16"></path><path d="M12 3v8"></path><path d="M8 19l-2 3"></path><path d="M16 19l2 3"></path></svg>
             </div>
             <div>
-              <h4 class="expense-row__title">地鐵 T-money <span class="expense-badge expense-badge--cash">現金</span></h4>
-              <p class="expense-row__date">6月10日 · 交通</p>
+              <h4 class="expense-row__title">地鐵 T-money</h4>
+              <p class="expense-row__date"><span class="expense-badge expense-badge--cash">現金</span>06/10 · 交通</p>
             </div>
           </div>
           <div class="expense-row__price">₩ 3,200</div>
@@ -2040,8 +2148,8 @@
               <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
             </div>
             <div>
-              <h4 class="expense-row__title">甘川文化村門票 <span class="expense-badge expense-badge--cash">現金</span></h4>
-              <p class="expense-row__date">6月11日 · 景點</p>
+              <h4 class="expense-row__title">甘川文化村門票</h4>
+              <p class="expense-row__date"><span class="expense-badge expense-badge--cash">現金</span>06/11 · 景點</p>
             </div>
           </div>
           <div class="expense-row__price">₩ 6,800</div>
