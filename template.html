@@ -530,9 +530,10 @@
       font-weight: 700;
       color: var(--color-text-muted);
     }
+    .date-item { cursor: pointer; }
     .date-item--active .date-item__day { color: var(--color-text-main); }
     .date-item--active .date-item__number {
-      background-color: var(--color-primary);
+      background-color: #1C1C1E;
       color: white;
     }
 
@@ -1239,20 +1240,25 @@
        ========================================================================== */
     .weather-card {
       background: var(--color-bg-card);
-      border: 1px solid var(--color-border);
+      border: 2px solid var(--color-border);
       border-radius: var(--radius-xl);
       padding: 1rem 1.25rem 0.875rem;
       margin-bottom: 1.5rem;
       position: relative;
       overflow: hidden;
+      transition: border-color 0.25s;
     }
     .weather-card::before { display: none; }
     /* 天氣狀態：晴天 */
-    .weather-card--sunny { background: #FFFFFF; border-color: #E5D480; }
+    .weather-card--sunny { background: #FFFFFF; border-color: #FDE68A; }
+    /* 天氣狀態：晴時多雲 */
+    .weather-card--partlysunny { background: #FFFFFF; border-color: #FCD34D; }
     /* 天氣狀態：多雲 */
-    .weather-card--cloudy { background: #FFFFFF; border-color: #C4D2DA; }
+    .weather-card--cloudy { background: #FFFFFF; border-color: #D1D5DB; }
     /* 天氣狀態：下雨 */
-    .weather-card--rainy { background: #FFFFFF; border-color: #AECFE0; }
+    .weather-card--rainy { background: #FFFFFF; border-color: #BFDBFE; }
+    /* 天氣狀態：大雨 */
+    .weather-card--heavyrain { background: #FFFFFF; border-color: #93C5FD; }
     .weather-card__top {
       display: flex;
       align-items: center;
@@ -1303,14 +1309,12 @@
     }
     .weather-chip svg { width: 13px; height: 13px; flex-shrink: 0; }
     .weather-chip--rain {
-      background: #C8D8E4;
-      color: #4A6C7E;
-      border: 1px solid #A8C0CE;
+      background: #EAF4FF;
+      color: #2563A8;
     }
     .weather-chip--outfit {
-      background: #D4C8DE;
-      color: #6A5880;
-      border: 1px solid #B8A8CC;
+      background: #F2EEFF;
+      color: #5E35A8;
     }
 
     /* ==========================================================================
@@ -1406,22 +1410,12 @@
     .note-dot--blue   { background-color: #7D9BAA; }
 
     /* ==========================================================================
-       19. 全域 Hover 輕微上移
+       19. Hover 輕微上移（僅限行程頁景點卡）
        ========================================================================== */
-    .trip-card,
-    .event-card,
-    .expense-row,
-    .note-card,
-    .flight-card,
-    .card {
+    .event-card {
       transition: transform .18s ease, box-shadow .18s ease;
     }
-    .trip-card:hover,
-    .event-card:hover,
-    .expense-row:hover,
-    .note-card:hover,
-    .flight-card:hover,
-    .card:hover {
+    .event-card:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 14px rgba(0,0,0,.08);
     }
@@ -1757,101 +1751,43 @@
         <!-- 日期選擇器 -->
         <div class="mb-6">
           <h2 style="font-size:17px;font-weight:700;margin-bottom:16px">2026年 6月</h2>
-          <div class="date-scroller">
-            <div class="date-item date-item--active">
+          <div class="date-scroller" id="date-scroller">
+            <div class="date-item date-item--active" onclick="setWeatherDay(0)">
               <span class="date-item__day">週三</span>
               <div class="date-item__number">10</div>
             </div>
-            <div class="date-item">
+            <div class="date-item" onclick="setWeatherDay(1)">
               <span class="date-item__day">週四</span>
               <div class="date-item__number">11</div>
             </div>
-            <div class="date-item">
+            <div class="date-item" onclick="setWeatherDay(2)">
               <span class="date-item__day">週五</span>
               <div class="date-item__number">12</div>
             </div>
-            <div class="date-item">
+            <div class="date-item" onclick="setWeatherDay(3)">
               <span class="date-item__day">週六</span>
               <div class="date-item__number">13</div>
             </div>
-            <div class="date-item">
+            <div class="date-item" onclick="setWeatherDay(4)">
               <span class="date-item__day">週日</span>
               <div class="date-item__number">14</div>
             </div>
           </div>
         </div>
 
-        <!-- 天氣資訊卡（--sunny / --cloudy / --rainy 切換） -->
-        <div class="weather-card weather-card--sunny">
+        <!-- 天氣資訊卡（依日期切換） -->
+        <div class="weather-card weather-card--sunny" id="weather-card">
           <div class="weather-card__top">
-            <!-- 太陽＋雲 彩色 SVG -->
-            <div class="weather-card__icon-wrap">
-              <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <radialGradient id="sg3" cx="35%" cy="28%" r="65%">
-                    <stop offset="0%" stop-color="#FFF8B8"/>
-                    <stop offset="60%" stop-color="#FFD040"/>
-                    <stop offset="100%" stop-color="#F5A820"/>
-                  </radialGradient>
-                  <radialGradient id="cg3" cx="28%" cy="22%" r="72%">
-                    <stop offset="0%" stop-color="#FFFFFF"/>
-                    <stop offset="100%" stop-color="#BDD4E8"/>
-                  </radialGradient>
-                  <filter id="sf2">
-                    <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#FFB02035"/>
-                  </filter>
-                  <filter id="cf2">
-                    <feDropShadow dx="0" dy="2.5" stdDeviation="2" flood-color="#6890A828"/>
-                  </filter>
-                </defs>
-                <!-- 太陽光芒（粗圓頭，可愛插畫感） -->
-                <line x1="12" y1="2" x2="12" y2="6" stroke="#FFD040" stroke-width="2.6" stroke-linecap="round"/>
-                <line x1="2" y1="12" x2="6" y2="12" stroke="#FFD040" stroke-width="2.6" stroke-linecap="round"/>
-                <line x1="4.1" y1="4.1" x2="6.9" y2="6.9" stroke="#FFD040" stroke-width="2.6" stroke-linecap="round"/>
-                <line x1="19.9" y1="4.1" x2="17.1" y2="6.9" stroke="#FFD040" stroke-width="2.6" stroke-linecap="round"/>
-                <line x1="4.1" y1="19.9" x2="6.9" y2="17.1" stroke="#FFD040" stroke-width="2.6" stroke-linecap="round"/>
-                <!-- 太陽本體 -->
-                <circle cx="12" cy="12" r="8.2" fill="url(#sg3)" filter="url(#sf2)"/>
-                <!-- 太陽表情：眼睛 -->
-                <circle cx="9.4" cy="11.5" r="1.1" fill="#C07820"/>
-                <circle cx="14.6" cy="11.5" r="1.1" fill="#C07820"/>
-                <!-- 太陽表情：微笑 -->
-                <path d="M9.2 14.2 Q12 16.5 14.8 14.2" stroke="#C07820" stroke-width="1.1" stroke-linecap="round" fill="none"/>
-                <!-- 太陽高光 -->
-                <ellipse cx="9.8" cy="9.2" rx="2.4" ry="1.5" fill="rgba(255,255,255,0.52)"/>
-                <!-- 雲陰影底座 -->
-                <ellipse cx="30" cy="40" rx="12" ry="3" fill="#A0C0D8" opacity="0.22"/>
-                <!-- 雲體底部（圓角矩形補色） -->
-                <rect x="18" y="29" width="24" height="10" rx="5" fill="url(#cg3)"/>
-                <!-- 雲的蓬鬆球（由後至前，越來越大） -->
-                <circle cx="22" cy="28" r="6" fill="url(#cg3)" filter="url(#cf2)"/>
-                <circle cx="31" cy="24.5" r="8" fill="url(#cg3)" filter="url(#cf2)"/>
-                <circle cx="39.5" cy="27.5" r="6.5" fill="url(#cg3)" filter="url(#cf2)"/>
-                <!-- 雲高光 -->
-                <ellipse cx="29.5" cy="22.5" rx="4" ry="2.5" fill="rgba(255,255,255,0.72)"/>
-                <ellipse cx="22" cy="26.5" rx="2.2" ry="1.4" fill="rgba(255,255,255,0.6)"/>
-              </svg>
+            <div class="weather-card__icon-wrap" id="weather-icon">
+              <!-- 由 JS 填入 SVG -->
             </div>
             <div class="weather-card__main">
-              <div class="weather-card__temp">32° <span>/ 26°C</span></div>
-              <div class="weather-card__desc">晴時多雲，部分地區有午後陣雨</div>
+              <div class="weather-card__temp" id="weather-temp">32° <span>/ 26°C</span></div>
+              <div class="weather-card__desc" id="weather-desc">晴時多雲，部分地區有午後陣雨</div>
             </div>
           </div>
-          <div class="weather-card__chips">
-            <!-- 降雨機率 chip -->
-            <span class="weather-chip weather-chip--rain">
-              <svg viewBox="0 0 16 16" fill="none" width="13" height="13">
-                <path d="M8 2 C8 2 3.5 7.5 3.5 10.5 a4.5 4.5 0 0 0 9 0 C12.5 7.5 8 2 8 2z" fill="#4A6C7E" opacity=".9"/>
-              </svg>
-              降雨 15%
-            </span>
-            <!-- 穿著建議 chip -->
-            <span class="weather-chip weather-chip--outfit">
-              <svg viewBox="0 0 16 16" fill="none" width="13" height="13">
-                <path d="M5 2 L2 5 L5 6 L5 14 L11 14 L11 6 L14 5 L11 2 L9 4 L7 4 Z" fill="#6A5880" opacity=".9"/>
-              </svg>
-              短袖＋薄外套
-            </span>
+          <div class="weather-card__chips" id="weather-chips">
+            <!-- 由 JS 填入 -->
           </div>
         </div>
 
@@ -2261,5 +2197,123 @@
   </nav>
 
 </div>
+<script>
+  // ── 天氣圖示 SVG（iOS 線條風格，viewBox 0 0 56 56，stroke only，fill none）──
+  const WEATHER_ICONS = {
+    sunny: `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="28" cy="28" r="11" stroke="#F59E0B" stroke-width="2.5"/>
+      <g stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round">
+        <line x1="28" y1="6"  x2="28" y2="13"/>
+        <line x1="28" y1="43" x2="28" y2="50"/>
+        <line x1="6"  y1="28" x2="13" y2="28"/>
+        <line x1="43" y1="28" x2="50" y2="28"/>
+        <line x1="12.1" y1="12.1" x2="17.1" y2="17.1"/>
+        <line x1="38.9" y1="38.9" x2="43.9" y2="43.9"/>
+        <line x1="43.9" y1="12.1" x2="38.9" y2="17.1"/>
+        <line x1="17.1" y1="38.9" x2="12.1" y2="43.9"/>
+      </g>
+    </svg>`,
+
+    partlysunny: `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- 小太陽（左上） -->
+      <circle cx="18" cy="18" r="7" stroke="#F59E0B" stroke-width="2"/>
+      <g stroke="#F59E0B" stroke-width="2" stroke-linecap="round">
+        <line x1="18" y1="5"  x2="18" y2="9"/>
+        <line x1="18" y1="27" x2="18" y2="31"/>
+        <line x1="5"  y1="18" x2="9"  y2="18"/>
+        <line x1="27" y1="18" x2="31" y2="18"/>
+        <line x1="8.1"  y1="8.1"  x2="10.9" y2="10.9"/>
+        <line x1="25.1" y1="25.1" x2="27.9" y2="27.9"/>
+        <line x1="27.9" y1="8.1"  x2="25.1" y2="10.9"/>
+        <line x1="10.9" y1="25.1" x2="8.1"  y2="27.9"/>
+      </g>
+      <!-- 線條雲朵（右下疊加） -->
+      <path d="M22 47 Q21 41 27 40 Q28 35 35 35 Q41 33 43 39 Q48 38 49 43 Q50 48 45 49 L26 49 Q22 49 22 47 Z"
+            stroke="#9CA3AF" stroke-width="2.2" fill="none" stroke-linejoin="round"/>
+    </svg>`,
+
+    cloudy: `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- 三個大小不一的圓弧組成雲朵頂部 + 底部封閉弧線 -->
+      <path d="M 8 40 Q 8 34 14 33 A 9 9 0 0 1 22 22 A 13 13 0 0 1 39 25 A 8 8 0 0 1 48 34 Q 49 42 43 43 L 14 43 Q 8 43 8 40 Z"
+            stroke="#6B7280" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+    </svg>`,
+
+    rainy: `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- 雲朵 -->
+      <path d="M 8 34 Q 8 28 14 27 A 9 9 0 0 1 22 17 A 13 13 0 0 1 39 20 A 8 8 0 0 1 48 29 Q 49 37 43 38 L 14 38 Q 8 38 8 34 Z"
+            stroke="#3B82F6" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+      <!-- 3 條向左斜雨線 -->
+      <g stroke="#3B82F6" stroke-width="2.2" stroke-linecap="round">
+        <line x1="20" y1="43" x2="17" y2="52"/>
+        <line x1="28" y1="43" x2="25" y2="52"/>
+        <line x1="36" y1="43" x2="33" y2="52"/>
+      </g>
+    </svg>`,
+
+    heavyrain: `<svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- 較深色雲朵 -->
+      <path d="M 6 30 Q 6 23 13 22 A 10 10 0 0 1 22 12 A 14 14 0 0 1 40 15 A 9 9 0 0 1 50 25 Q 51 34 44 35 L 12 35 Q 6 35 6 30 Z"
+            stroke="#2563EB" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+      <!-- 4 條主雨線 -->
+      <g stroke="#2563EB" stroke-width="2.2" stroke-linecap="round">
+        <line x1="15" y1="40" x2="12" y2="50"/>
+        <line x1="23" y1="40" x2="20" y2="50"/>
+        <line x1="31" y1="40" x2="28" y2="50"/>
+        <line x1="39" y1="40" x2="36" y2="50"/>
+      </g>
+      <!-- 3 條副雨線（較淡較細） -->
+      <g stroke="#2563EB" stroke-width="1.6" stroke-linecap="round" opacity="0.5">
+        <line x1="19" y1="45" x2="17" y2="53"/>
+        <line x1="27" y1="45" x2="25" y2="53"/>
+        <line x1="35" y1="45" x2="33" y2="53"/>
+      </g>
+    </svg>`
+  };
+
+  // ── Chip 小圖示（stroke only）──
+  const ICON_DROP  = `<svg viewBox="0 0 16 16" fill="none" width="13" height="13"><path d="M8 2 C8 2 3.5 7.5 3.5 10.5 a4.5 4.5 0 0 0 9 0 C12.5 7.5 8 2 8 2z" stroke="#2563A8" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
+  const ICON_SHIRT = `<svg viewBox="0 0 16 16" fill="none" width="13" height="13"><path d="M5 2 L2 5 L5 6 L5 14 L11 14 L11 6 L14 5 L11 2 L9 4 L7 4 Z" stroke="#5E35A8" stroke-width="1.3" stroke-linejoin="round"/></svg>`;
+
+  // ── 各天氣資料（對應日期 10~14 日）──
+  const WEATHER_DATA = [
+    { type: 'sunny',       temp: '32°', range: '/ 26°C', desc: '晴時多雲，部分地區有午後陣雨', rain: '降雨 15%', outfit: '短袖＋薄外套'   },
+    { type: 'partlysunny', temp: '29°', range: '/ 23°C', desc: '晴時多雲，午後偶有陣雨',         rain: '降雨 35%', outfit: '短袖＋薄外套'   },
+    { type: 'cloudy',      temp: '25°', range: '/ 20°C', desc: '多雲，偶有雲層遮蔽陽光',         rain: '降雨 20%', outfit: '長袖薄外套'     },
+    { type: 'rainy',       temp: '22°', range: '/ 18°C', desc: '有雨，出門記得帶傘',             rain: '降雨 80%', outfit: '雨衣＋防水鞋'   },
+    { type: 'heavyrain',   temp: '20°', range: '/ 16°C', desc: '大雨特報，避免戶外活動',         rain: '降雨 95%', outfit: '全套雨具必備'   }
+  ];
+
+  // ── 切換天氣日期 ──
+  function setWeatherDay(idx) {
+    const d = WEATHER_DATA[idx];
+
+    // 更新卡片 border class
+    const card = document.getElementById('weather-card');
+    card.className = 'weather-card weather-card--' + d.type;
+
+    // 更新圖示
+    document.getElementById('weather-icon').innerHTML = WEATHER_ICONS[d.type];
+
+    // 更新溫度
+    document.getElementById('weather-temp').innerHTML = d.temp + ' <span>' + d.range + '</span>';
+
+    // 更新描述
+    document.getElementById('weather-desc').textContent = d.desc;
+
+    // 更新 chips
+    document.getElementById('weather-chips').innerHTML =
+      '<span class="weather-chip weather-chip--rain">' + ICON_DROP + d.rain + '</span>' +
+      '<span class="weather-chip weather-chip--outfit">' + ICON_SHIRT + d.outfit + '</span>';
+
+    // 更新 active 日期按鈕
+    const items = document.querySelectorAll('#date-scroller .date-item');
+    items.forEach(function(el, i) {
+      el.classList.toggle('date-item--active', i === idx);
+    });
+  }
+
+  // 初始化：顯示第一天並填入圖示
+  setWeatherDay(0);
+</script>
 </body>
 </html>

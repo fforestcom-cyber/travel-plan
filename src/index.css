@@ -1,3 +1,6 @@
+@import './styles/variables.css';
+@import './styles/app.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,27 +10,5 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     scroll-behavior: smooth;
-  }
-
-  body {
-    background-color: #F5F5F7;
-    color: #1A1A1A;
-    /* 底部 Tab Bar 佔位（行動裝置） */
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-}
-
-@layer utilities {
-  /* 行動端底部 Tab Bar 的安全區域 */
-  .pb-safe {
-    padding-bottom: calc(4rem + env(safe-area-inset-bottom));
-  }
-
-  /* 最多顯示兩行文字 */
-  .line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
   }
 }
