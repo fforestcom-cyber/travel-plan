@@ -10,7 +10,7 @@ interface Props {
 }
 
 const HomeSummary = ({
-  greeting = '나의 한국 여행',
+  greeting,
   title = '韓國釜山自由行',
   stats = [
     { num: 5,  label: '天數' },
@@ -19,7 +19,7 @@ const HomeSummary = ({
   ],
 }: Props) => (
   <div className="home-summary">
-    <p className="home-summary__greeting">{greeting}</p>
+    {greeting && <p className="home-summary__greeting">{greeting}</p>}
     <h1 className="home-summary__title">
       {title}<span>。</span>
     </h1>

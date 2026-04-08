@@ -1,22 +1,17 @@
 import { useState } from 'react';
+import { INIT_NOTES, NoteItem, DotColor, TRIP_INFO } from '../data/mockData';
 
-type DotColor = 'red' | 'yellow' | 'green' | 'blue';
-
-interface Note {
-  id: number;
-  text: string;
-  date: string;
-  color: DotColor;
-}
-
-const INIT_NOTES: Note[] = [
-  { id: 1, text: '西面地鐵站 2 號出口附近有家 24 小時便利商店，早餐可以在那解決。', date: '06/10', color: 'blue' },
-  { id: 2, text: '廣安大橋夜景最佳拍攝點：廣安海水浴場西側堤岸，帶腳架效果更好！', date: '06/11', color: 'green' },
-  { id: 3, text: '海雲台市場的炒年糕超好吃，記得多買一份！價格約 ₩3,000。', date: '06/12', color: 'yellow' },
-];
+const formatDate = () => {
+  const now = new Date();
+  const m = now.getMonth() + 1;
+  const d = now.getDate();
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  return `${m}月${d}日 ${hh}:${mm}`;
+};
 
 const NotesPage = () => {
-  const [notes, setNotes] = useState<Note[]>(INIT_NOTES);
+  const [notes, setNotes] = useState<NoteItem[]>(INIT_NOTES);
   const [draft, setDraft] = useState('');
 
   const addNote = () => {
@@ -24,7 +19,7 @@ const NotesPage = () => {
     if (!text) return;
     const colors: DotColor[] = ['blue', 'green', 'yellow', 'red'];
     const color = colors[notes.length % colors.length];
-    setNotes([{ id: Date.now(), text, date: '今天', color }, ...notes]);
+    setNotes([{ id: Date.now(), text, date: formatDate(), color }, ...notes]);
     setDraft('');
   };
 
@@ -33,31 +28,40 @@ const NotesPage = () => {
   return (
     <>
       <div className="page-trip-header">
-        <div className="page-trip-header__title">旅遊備註</div>
-        <div className="page-trip-header__date">韓國釜山自由行 5天4夜</div>
+        <div className="page-trip-header__title">{TRIP_INFO.title}</div>
+        <div className="page-trip-header__date">
+          <svg viewBox="0 0 24 24" style={{ width: 13, height: 13 }}>
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
+          {TRIP_INFO.dateRange}
+        </div>
       </div>
 
       <div className="section-px">
         {/* 新增表單 */}
-        <div className="note-compose">
+        <div className="note-compose mb-6">
           <textarea
-            placeholder="記錄旅途中的靈感、提醒或注意事項…"
+            placeholder="有什麼想記下來的嗎？行前提醒、購物清單、突發事項…"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
           />
           <div className="note-compose__actions">
-            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-light)' }}>
-              {draft.length} 字
-            </span>
-            <button
-              className="btn btn--dark"
-              onClick={addNote}
-            >
+            <button className="btn btn--primary-light">
+              <svg viewBox="0 0 24 24" style={{ width: 15, height: 15 }}>
+                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+                <circle cx="12" cy="13" r="3" />
+              </svg>
+              上傳圖片
+            </button>
+            <button className="btn btn--dark" onClick={addNote}>
               <svg viewBox="0 0 24 24" style={{ width: 14, height: 14 }}>
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
-              新增備註
+              新增
             </button>
           </div>
         </div>
@@ -65,18 +69,16 @@ const NotesPage = () => {
         {/* 備註列表 */}
         {notes.map((note) => (
           <div key={note.id} className="note-card">
-            <span className={`note-dot note-dot--${note.color}`} style={{ marginTop: 4 }} />
             <div className="note-card__body">
-              <div className="note-card__date">
-                <svg viewBox="0 0 24 24" style={{ width: 11, height: 11 }}>
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" />
-                </svg>
+              {/* dot 在 date 行內 */}
+              <p className="note-card__date">
+                <span className={`note-dot note-dot--${note.color}`} />
                 {note.date}
-              </div>
-              <div className="note-card__text">{note.text}</div>
+              </p>
+              <p className="note-card__text">{note.text}</p>
+              {note.img && (
+                <img src={note.img} alt="備註附圖" className="note-card__img" />
+              )}
             </div>
             <button
               className="note-card__delete"

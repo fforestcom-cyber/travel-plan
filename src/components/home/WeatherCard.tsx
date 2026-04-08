@@ -1,25 +1,5 @@
 import { useState } from 'react';
-
-type WeatherType = 'sunny' | 'partlysunny' | 'cloudy' | 'rainy' | 'heavyrain';
-
-interface DayWeather {
-  day: string;
-  date: number;
-  type: WeatherType;
-  temp: string;
-  range: string;
-  desc: string;
-  rain: string;
-  outfit: string;
-}
-
-const DAYS: DayWeather[] = [
-  { day: '週三', date: 10, type: 'sunny',       temp: '32°', range: '/ 26°C', desc: '晴時多雲，部分地區有午後陣雨', rain: '降雨 15%', outfit: '短袖＋薄外套' },
-  { day: '週四', date: 11, type: 'partlysunny', temp: '29°', range: '/ 23°C', desc: '晴時多雲，午後偶有陣雨',       rain: '降雨 35%', outfit: '短袖＋薄外套' },
-  { day: '週五', date: 12, type: 'cloudy',      temp: '25°', range: '/ 20°C', desc: '多雲，偶有雲層遮蔽陽光',       rain: '降雨 20%', outfit: '長袖薄外套'   },
-  { day: '週六', date: 13, type: 'rainy',       temp: '22°', range: '/ 18°C', desc: '有雨，出門記得帶傘',           rain: '降雨 80%', outfit: '雨衣＋防水鞋' },
-  { day: '週日', date: 14, type: 'heavyrain',   temp: '20°', range: '/ 16°C', desc: '大雨特報，避免戶外活動',       rain: '降雨 95%', outfit: '全套雨具必備' },
-];
+import { WEATHER_DAYS, WeatherType } from '../../data/mockData';
 
 /* ── iOS 線條風格 SVG 天氣圖示 ── */
 const WeatherIcon = ({ type }: { type: WeatherType }) => {
@@ -124,27 +104,22 @@ const ShirtIcon = () => (
 /* ── Main Component ── */
 const WeatherCard = () => {
   const [activeIdx, setActiveIdx] = useState(0);
-  const d = DAYS[activeIdx];
+  const d = WEATHER_DAYS[activeIdx];
 
   return (
     <>
       {/* 日期選擇列 */}
-      <div className="mb-6">
-        <div className="section-title-row" style={{ marginBottom: 12 }}>
-          <h2>2026年 6月</h2>
-        </div>
-        <div className="date-scroller">
-          {DAYS.map((day, i) => (
-            <div
-              key={day.date}
-              className={`date-item${i === activeIdx ? ' date-item--active' : ''}`}
-              onClick={() => setActiveIdx(i)}
-            >
-              <span className="date-item__day">{day.day}</span>
-              <div className="date-item__number">{day.date}</div>
-            </div>
-          ))}
-        </div>
+      <div className="date-scroller mb-4">
+        {WEATHER_DAYS.map((day, i) => (
+          <div
+            key={day.date}
+            className={`date-item${i === activeIdx ? ' date-item--active' : ''}`}
+            onClick={() => setActiveIdx(i)}
+          >
+            <span className="date-item__day">{day.day}</span>
+            <div className="date-item__number">{day.date}</div>
+          </div>
+        ))}
       </div>
 
       {/* 天氣卡 */}

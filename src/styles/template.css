@@ -1,0 +1,1569 @@
+    /* ==========================================================================
+       1. CSS 變數系統 (完全與 index.html 一致)
+       ========================================================================== */
+    :root {
+      /* 主題色彩 (莫蘭迪藍系) */
+      --color-primary:        #7D9BAA;   /* 莫蘭迪藍 */
+      --color-primary-light:  #EAF1F5;   /* 極淡藍底 */
+      --color-primary-border: #C4D8E2;   /* 藍灰框線 */
+      --color-primary-dark:   #567E8E;   /* 深藍灰 */
+
+      /* 中性色彩 */
+      --color-bg-body:  #E4E8EB;   /* 外圍：帶藍的淺灰 */
+      --color-bg-app:   #F5F7F9;   /* APP 底：冷白 */
+      --color-bg-card:  #FFFFFF;
+      --color-bg-input: #EFF3F5;   /* 輸入框：藍灰淡底 */
+
+      --color-text-main:  #1E2D35;   /* 主文字：深藍黑 */
+      --color-text-muted: #607180;   /* 次文字：藍灰 */
+      --color-text-light: #96A8B4;   /* 淺文字：冷灰 */
+
+      --color-border: #D8E3E9;       /* 邊框：帶藍的灰 */
+
+      /* 狀態色彩 — 莫蘭迪調性 */
+
+      /* 鼠尾草綠 (Sage Green) — 與藍色同涼調、自然互補 */
+      --color-success:        #5E9977;
+      --color-success-bg:     #EBF5EF;
+      --color-success-border: #B2D4C2;
+
+      /* 石板藍 (Slate Blue) — 比主色更深/飽，信息感強 */
+      --color-info:        #4E7A9E;
+      --color-info-bg:     #EAF2F8;
+      --color-info-border: #B4CEDF;
+
+      /* 赭土橙 (Terracotta) — 暖色互補，低飽和莫蘭迪風 */
+      --color-warning:    #B87848;
+      --color-warning-bg: #FAF0E6;
+
+      --color-naver: #03C75A;
+
+      /* 字體大小 */
+      --text-xs: 12px;
+      --text-sm: 14px;
+      --text-base: 16px;
+      --text-lg: 18px;
+      --text-xl: 20px;
+      --text-2xl: 26px;
+      --text-3xl: 32px;
+
+      /* 圓角 */
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      --radius-2xl: 32px;
+
+      /* 字體家族 */
+      --font-base:   'Noto Sans TC', sans-serif;
+      --font-title:  'Noto Serif TC', serif;
+      --font-number: 'DM Sans', sans-serif;
+    }
+
+    /* ==========================================================================
+       2. Reset & Base
+       ========================================================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: var(--font-base);
+      background-color: var(--color-bg-body);
+      color: var(--color-text-main);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    input, textarea, select {
+      font-family: inherit;
+    }
+
+    a { text-decoration: none; }
+
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* SVG 通用設定 */
+    svg {
+      width: 1em;
+      height: 1em;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+    }
+
+    /* ==========================================================================
+       3. 核心佈局
+       ========================================================================== */
+    .app-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 420px;
+      height: 100vh;
+      max-height: 850px;
+      background-color: var(--color-bg-app);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,.25);
+    }
+
+    @media (min-width: 640px) {
+      .app-wrapper {
+        border: 8px solid #111;
+        border-radius: 40px;
+        height: 850px;
+        margin: 2rem auto;
+      }
+    }
+
+    /* 隱藏 Radio Tab 控制器 */
+    .tab-controller { display: none; }
+
+    /* 視圖容器 */
+    .view-container {
+      flex: 1;
+      overflow-y: auto;
+      padding-bottom: 100px;
+      display: none;
+    }
+
+    /* CSS Tab 切換邏輯 */
+    #tab-home:checked     ~ .app-views #view-home,
+    #tab-schedule:checked ~ .app-views #view-schedule,
+    #tab-expense:checked  ~ .app-views #view-expense,
+    #tab-notes:checked    ~ .app-views #view-notes {
+      display: block;
+      animation: fadeIn 0.25s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ==========================================================================
+       4. 頂部 Header (Sticky)
+       ========================================================================== */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background-color: rgba(255,255,255,.95);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--color-border);
+      padding: 1.25rem 1.5rem;
+      border-bottom-left-radius: var(--radius-xl);
+      border-bottom-right-radius: var(--radius-xl);
+    }
+
+    .app-header__top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .app-header__title {
+      font-size: var(--text-xl);
+      font-weight: 700;
+    }
+
+    /* ==========================================================================
+       5. 底部 Tab Bar
+       ========================================================================== */
+    .app-tab-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background-color: var(--color-bg-card);
+      border-top: 1px solid var(--color-border);
+      display: flex;
+      justify-content: space-between;
+      padding: 0.75rem 1.5rem calc(0.75rem + env(safe-area-inset-bottom, 12px));
+      border-top-left-radius: var(--radius-xl);
+      border-top-right-radius: var(--radius-xl);
+      z-index: 50;
+    }
+
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 4rem;
+      height: 3rem;
+      color: #D1D5DB;
+      cursor: pointer;
+      transition: color 0.2s;
+      position: relative;
+    }
+
+    .tab-item svg {
+      width: 24px;
+      height: 24px;
+      margin-bottom: 4px;
+    }
+
+    .tab-item__label {
+      font-size: var(--text-xs);
+      font-weight: 600;
+    }
+
+    .tab-item__indicator {
+      position: absolute;
+      bottom: -6px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--color-primary);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    /* Tab 選中狀態 */
+    #tab-home:checked     ~ .app-tab-bar label[for="tab-home"],
+    #tab-schedule:checked ~ .app-tab-bar label[for="tab-schedule"],
+    #tab-expense:checked  ~ .app-tab-bar label[for="tab-expense"],
+    #tab-notes:checked    ~ .app-tab-bar label[for="tab-notes"] {
+      color: var(--color-primary);
+    }
+
+    #tab-home:checked     ~ .app-tab-bar label[for="tab-home"]     .tab-item__indicator,
+    #tab-schedule:checked ~ .app-tab-bar label[for="tab-schedule"] .tab-item__indicator,
+    #tab-expense:checked  ~ .app-tab-bar label[for="tab-expense"]  .tab-item__indicator,
+    #tab-notes:checked    ~ .app-tab-bar label[for="tab-notes"]    .tab-item__indicator {
+      opacity: 1;
+    }
+
+    /* ==========================================================================
+       6. 通用 UI 元件
+       ========================================================================== */
+    .section-px { padding-left: 1.5rem; padding-right: 1.5rem; }
+    .section-py { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+    .mt-4 { margin-top: 1rem; }
+    .mt-6 { margin-top: 1.5rem; }
+    .mb-4 { margin-bottom: 1rem; }
+    .mb-6 { margin-bottom: 1.5rem; }
+
+    /* 通用白底卡片 */
+    .card {
+      background-color: var(--color-bg-card);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--color-border);
+      padding: 1.25rem;
+    }
+
+    /* Badge */
+    .badge {
+      background-color: var(--color-bg-input);
+      color: var(--color-text-muted);
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-weight: 600;
+    }
+    .badge--primary {
+      background-color: var(--color-primary-light);
+      color: var(--color-primary-dark);
+      border: 1px solid var(--color-primary-border);
+    }
+
+    /* Tag */
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: var(--text-sm);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--color-border);
+      font-weight: 500;
+    }
+    .tag--time   { background-color: white; color: var(--color-text-muted); }
+    .tag--naver  { background-color: var(--color-naver); border-color: var(--color-naver); color: white; }
+    .tag--google { background-color: var(--color-info); border-color: var(--color-info); color: white; }
+
+    /* Tag Group */
+    .tag-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 1rem;
+    }
+
+    /* Section 標題列 */
+    .section-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .section-title-row h2 {
+      font-size: 17px;
+      font-weight: 700;
+    }
+    .section-title-row__link {
+      font-size: var(--text-sm);
+      color: var(--color-primary);
+      font-weight: 500;
+    }
+
+    /* ==========================================================================
+       7. 首頁元件
+       ========================================================================== */
+
+    /* 頂部摘要卡 */
+    .home-summary {
+      background-color: var(--color-bg-card);
+      border-bottom: 1px solid var(--color-border);
+      border-bottom-left-radius: var(--radius-xl);
+      border-bottom-right-radius: var(--radius-xl);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .home-summary__greeting {
+      font-size: var(--text-sm);
+      color: var(--color-text-light);
+      margin-bottom: 4px;
+    }
+    .home-summary__title {
+      font-size: var(--text-2xl);
+      font-weight: 800;
+      color: var(--color-text-main);
+      margin-bottom: 1rem;
+    }
+    .home-summary__title span { color: var(--color-primary); }
+    .home-summary__stats {
+      display: flex;
+      gap: 8px;
+    }
+    .home-stat {
+      flex: 1;
+      background-color: var(--color-primary-light);
+      border: 1px solid var(--color-primary-border);
+      border-radius: var(--radius-lg);
+      padding: 12px;
+      text-align: center;
+    }
+    .home-stat__num {
+      font-size: var(--text-xl);
+      font-weight: 800;
+      color: var(--color-primary-dark);
+    }
+    .home-stat__label {
+      font-size: var(--text-xs);
+      color: var(--color-text-light);
+      margin-top: 2px;
+    }
+
+    /* 行程卡片列表 (首頁) */
+    .trip-card {
+      background-color: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl);
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      padding: 1rem;
+      margin-bottom: 12px;
+      cursor: pointer;
+    }
+    .trip-card__thumb {
+      width: 72px;
+      height: 72px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border);
+      flex-shrink: 0;
+      overflow: hidden;
+      position: relative;
+      background-color: var(--color-primary-light);
+    }
+    .trip-card__thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .trip-card__thumb-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-primary);
+    }
+    .trip-card__thumb-placeholder svg {
+      width: 28px;
+      height: 28px;
+    }
+    .trip-card__body { flex: 1; min-width: 0; }
+    .trip-card__title {
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: var(--color-text-main);
+      margin-bottom: 4px;
+    }
+    .trip-card__location {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: var(--text-sm);
+      color: var(--color-text-light);
+      margin-bottom: 8px;
+    }
+    .trip-card__meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .trip-card__date {
+      font-size: var(--text-xs);
+      color: var(--color-text-light);
+    }
+    .trip-card__chevron {
+      color: var(--color-text-light);
+      margin-left: auto;
+    }
+
+    /* ==========================================================================
+       8. 行程頁元件
+       ========================================================================== */
+
+    /* 匯率換算器 */
+    .exchange-card {
+      background-color: var(--color-primary-light);
+      border: 1px solid var(--color-primary-border);
+      padding: 1rem;
+      border-radius: var(--radius-lg);
+    }
+    .exchange-card__inner {
+      background-color: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      position: relative;
+    }
+    .exchange-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .exchange-label {
+      font-size: var(--text-sm);
+      font-weight: 700;
+      color: var(--color-text-light);
+    }
+    .exchange-input {
+      background: transparent;
+      border: none;
+      text-align: right;
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: var(--color-text-main);
+      outline: none;
+      width: 50%;
+    }
+    .exchange-divider {
+      height: 1px;
+      background-color: var(--color-border);
+    }
+    .exchange-value {
+      font-size: var(--text-lg);
+      font-weight: 700;
+      color: var(--color-primary);
+    }
+
+    /* 橫向日期選擇器 */
+    .date-scroller {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .date-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .date-item__day {
+      font-size: var(--text-xs);
+      font-weight: 600;
+      color: var(--color-text-light);
+    }
+    .date-item__number {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: var(--color-text-muted);
+    }
+    .date-item { cursor: pointer; }
+    .date-item--active .date-item__day { color: var(--color-text-main); }
+    .date-item--active .date-item__number {
+      background-color: #1C1C1E;
+      color: white;
+    }
+
+    /* 景點手風琴卡片 (details/summary) */
+    .event-card {
+      background-color: var(--color-bg-card);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--color-border);
+      margin-bottom: 1rem;
+      transition: all 0.3s;
+    }
+    .event-card__summary {
+      list-style: none;
+      padding: 1rem;
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      cursor: pointer;
+    }
+    .event-card__summary::-webkit-details-marker { display: none; }
+    .event-card__thumbnail {
+      width: 5rem;
+      height: 5rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border);
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+      background-color: var(--color-primary-light);
+    }
+    .event-card__thumbnail img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .event-card__thumb-icon {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-primary);
+    }
+    .event-card__thumb-icon svg { width: 32px; height: 32px; }
+    .event-card__time-badge {
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      background-color: rgba(255,255,255,.9);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: var(--color-text-main);
+    }
+    .event-card__content { flex: 1; }
+    .event-card__title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 4px;
+    }
+    .event-card__title {
+      font-size: var(--text-lg);
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .chevron-icon {
+      color: var(--color-text-light);
+      transition: transform 0.3s;
+    }
+    .event-card[open] .chevron-icon { transform: rotate(180deg); }
+    .event-card__location {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: var(--text-sm);
+      color: var(--color-text-light);
+      margin-bottom: 6px;
+    }
+    .event-card__tags {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* 展開後詳情 */
+    .event-card__details {
+      padding: 0 1rem 1rem;
+      border-top: 1px solid var(--color-bg-input);
+      margin-top: 0.5rem;
+      padding-top: 1rem;
+    }
+    .event-card__desc {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      margin-bottom: 1rem;
+      line-height: 1.6;
+    }
+
+    /* 資訊圖片區 */
+    .info-image-box {
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      border: 1px solid var(--color-border);
+      position: relative;
+      margin-bottom: 1rem;
+      height: 8rem;
+    }
+    .info-image-box img { width: 100%; height: 100%; object-fit: cover; }
+    .info-image-caption {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      background: rgba(31,41,55,.7);
+      backdrop-filter: blur(4px);
+      color: white;
+      font-size: var(--text-xs);
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* 規則條目 */
+    .rule-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: var(--text-sm);
+      margin-top: 10px;
+    }
+    .rule-item svg { margin-top: 2px; flex-shrink: 0; }
+    .rule-item__text { color: var(--color-text-muted); line-height: 1.6; }
+
+    /* 口袋名單 */
+    .shop-list { margin-bottom: 1rem; }
+    .shop-list__title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--color-text-main);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .shop-item {
+      background-color: rgba(242,245,247,.6);
+      border: 1px solid var(--color-primary-border);
+      padding: 12px;
+      border-radius: var(--radius-md);
+      margin-bottom: 8px;
+    }
+    .shop-item__header {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .shop-item__name { font-size: 15px; font-weight: 700; color: var(--color-text-main); }
+    .shop-item__kr { font-size: var(--text-xs); color: var(--color-text-light); }
+    .shop-item__desc { font-size: 13px; color: var(--color-text-muted); margin-top: 4px; line-height: 1.5; }
+
+    /* 交通方式 Pure CSS Radio Tabs */
+    .transit-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .transit-radio { display: none; }
+    .transit-label {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 0;
+      background-color: var(--color-bg-input);
+      color: var(--color-text-light);
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .transit-content {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      background-color: var(--color-bg-input);
+      padding: 12px;
+      border-radius: var(--radius-md);
+      line-height: 1.6;
+      white-space: pre-line;
+      display: none;
+    }
+    #t1-subway:checked ~ .transit-tabs .lbl-t1-subway,
+    #t1-taxi:checked   ~ .transit-tabs .lbl-t1-taxi,
+    #t2-subway:checked ~ .transit-tabs .lbl-t2-subway,
+    #t2-taxi:checked   ~ .transit-tabs .lbl-t2-taxi,
+    #t3-subway:checked ~ .transit-tabs .lbl-t3-subway,
+    #t3-taxi:checked   ~ .transit-tabs .lbl-t3-taxi {
+      background-color: var(--color-primary-light);
+      color: var(--color-primary);
+    }
+    #t1-subway:checked ~ .t1-content-subway,
+    #t1-taxi:checked   ~ .t1-content-taxi,
+    #t2-subway:checked ~ .t2-content-subway,
+    #t2-taxi:checked   ~ .t2-content-taxi,
+    #t3-subway:checked ~ .t3-content-subway,
+    #t3-taxi:checked   ~ .t3-content-taxi { display: block; }
+
+    /* ==========================================================================
+       9. 記帳頁元件
+       ========================================================================== */
+    .expense-total {
+      text-align: center;
+      padding: 2.5rem 1.5rem 1.5rem;
+      background-color: var(--color-bg-card);
+      border-bottom: 1px solid var(--color-border);
+      border-bottom-left-radius: var(--radius-xl);
+      border-bottom-right-radius: var(--radius-xl);
+      margin-bottom: 1.5rem;
+    }
+    .expense-total__label {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-text-light);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .expense-total__amount {
+      font-size: var(--text-3xl);
+      font-weight: 800;
+      color: var(--color-text-main);
+      margin: 4px 0;
+    }
+    .expense-total__sub {
+      font-size: var(--text-sm);
+      color: var(--color-primary);
+      font-weight: 500;
+    }
+
+    /* 分類統計橫列 */
+    .expense-summary-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 1.5rem;
+      overflow-x: auto;
+    }
+    .expense-summary-row::-webkit-scrollbar { display: none; }
+    .expense-summary-chip {
+      flex: none;
+      background-color: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 12px 16px;
+      text-align: center;
+      min-width: 80px;
+    }
+    .expense-summary-chip__label {
+      font-size: var(--text-xs);
+      color: var(--color-text-light);
+      margin-bottom: 4px;
+    }
+    .expense-summary-chip__amount {
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: var(--color-text-main);
+    }
+
+    /* 單筆記帳列 */
+    .expense-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background-color: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      margin-bottom: 12px;
+    }
+    .expense-row__left { display: flex; align-items: center; gap: 16px; }
+    .expense-row__icon {
+      background-color: var(--color-bg-input);
+      padding: 12px;
+      border-radius: var(--radius-md);
+      color: var(--color-text-light);
+    }
+    .expense-row__icon svg { width: 20px; height: 20px; }
+    .expense-row__title {
+      font-size: var(--text-base);
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .expense-row__date {
+      font-size: var(--text-sm);
+      color: var(--color-text-light);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-number);
+    }
+    .expense-row__price {
+      font-size: var(--text-lg);
+      font-weight: 700;
+      color: var(--color-text-main);
+    }
+
+    .expense-badge {
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      border: 1px solid;
+    }
+    .expense-badge--cash {
+      background-color: var(--color-success-bg);
+      color: var(--color-success);
+      border-color: var(--color-success-border);
+    }
+    .expense-badge--card {
+      background-color: var(--color-info-bg);
+      color: var(--color-info);
+      border-color: var(--color-info-border);
+    }
+
+    /* ==========================================================================
+       10. 備註頁元件
+       ========================================================================== */
+    .note-compose {
+      background-color: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .note-compose textarea {
+      width: 100%;
+      background: var(--color-bg-input);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      border: none;
+      font-size: var(--text-base);
+      resize: none;
+      height: 96px;
+      margin-bottom: 14px;
+      color: var(--color-text-main);
+      outline: none;
+    }
+    .note-compose textarea::placeholder { color: var(--color-text-light); }
+    .note-compose__actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .note-card {
+      background-color: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl);
+      padding: 1.25rem;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .note-card__body { flex: 1; }
+    .note-card__date {
+      font-size: var(--text-xs);
+      color: var(--color-text-light);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .note-card__text {
+      font-size: 15px;
+      color: var(--color-text-main);
+      font-weight: 500;
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+    .note-card__img {
+      border-radius: var(--radius-md);
+      max-height: 140px;
+      width: auto;
+      border: 1px solid var(--color-border);
+    }
+    .note-card__delete { color: var(--color-text-light); }
+    .note-card__delete svg { width: 18px; height: 18px; }
+
+    /* ==========================================================================
+       11. 通用按鈕
+       ========================================================================== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 16px;
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+    }
+    .btn--primary-light {
+      background-color: var(--color-primary-light);
+      color: var(--color-primary);
+    }
+    .btn--primary-light svg { width: 18px; height: 18px; }
+    .btn--dark {
+      background-color: var(--color-text-main);
+      color: white;
+    }
+    .btn--dark svg { width: 16px; height: 16px; }
+    .btn--icon {
+      background-color: var(--color-primary-light);
+      color: var(--color-primary);
+      padding: 10px;
+    }
+    .btn--icon svg { width: 18px; height: 18px; }
+
+    /* ==========================================================================
+       12. 清單工具列
+       ========================================================================== */
+    .list-item {
+      display: flex;
+      gap: 12px;
+      font-size: 15px;
+      margin-bottom: 20px;
+    }
+    .list-item__dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--color-primary);
+      margin-top: 8px;
+      flex-shrink: 0;
+    }
+    .list-item__text { color: var(--color-text-muted); line-height: 1.6; }
+
+    /* ==========================================================================
+       13. 共用頁首
+       ========================================================================== */
+    .page-trip-header {
+      background-color: var(--color-bg-app);
+      border-bottom: 1px solid var(--color-border);
+      padding: 1.25rem 1.5rem 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .page-trip-header__title {
+      font-size: var(--text-lg);
+      font-weight: 700;
+      color: var(--color-text-main);
+      margin-bottom: 4px;
+    }
+    .page-trip-header__date {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: var(--text-sm);
+      color: var(--color-primary-dark);
+      font-weight: 500;
+    }
+
+    /* ==========================================================================
+       14. 首頁：旅程主卡片 + 機票卡片
+       ========================================================================== */
+    .trip-main-card {
+      background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 100%);
+      border-radius: var(--radius-xl);
+      padding: 1.5rem;
+      color: white;
+      margin-bottom: 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .trip-main-card::after {
+      content: '';
+      position: absolute;
+      right: -20px;
+      top: -20px;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.08);
+    }
+    .trip-main-card__label {
+      font-size: var(--text-xs);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      opacity: .75;
+      margin-bottom: 6px;
+    }
+    .trip-main-card__title {
+      font-size: var(--text-xl);
+      font-weight: 800;
+      margin-bottom: 6px;
+      line-height: 1.25;
+    }
+    .trip-main-card__date {
+      font-size: var(--text-sm);
+      opacity: .8;
+    }
+    .trip-main-card__chips {
+      display: flex;
+      gap: 8px;
+      margin-top: 1rem;
+    }
+    .trip-main-card__chip {
+      background: rgba(255,255,255,.18);
+      border-radius: 99px;
+      padding: 4px 12px;
+      font-size: var(--text-xs);
+      font-weight: 600;
+    }
+
+    /* 機票卡 */
+    .flight-section-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--color-text-main);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .flight-card {
+      background-color: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl);
+      padding: 1rem 1.25rem;
+      margin-bottom: 10px;
+    }
+    .flight-card__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .flight-card__direction {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 3px 10px;
+      border-radius: 99px;
+    }
+    .flight-card__direction--dep {
+      background-color: var(--color-primary-light);
+      color: var(--color-primary-dark);
+      border: 1px solid var(--color-primary-border);
+    }
+    .flight-card__direction--arr {
+      background-color: var(--color-success-bg);
+      color: var(--color-success);
+      border: 1px solid var(--color-success-border);
+    }
+    .flight-card__flight-no {
+      font-size: var(--text-sm);
+      color: var(--color-text-light);
+      font-weight: 600;
+    }
+    .flight-card__route {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+    .flight-card__airport {
+      flex: 1;
+    }
+    .flight-card__iata {
+      font-size: var(--text-2xl);
+      font-weight: 800;
+      color: var(--color-text-main);
+      letter-spacing: -1px;
+      line-height: 1;
+    }
+    .flight-card__city {
+      font-size: var(--text-xs);
+      color: var(--color-text-light);
+      margin-top: 2px;
+    }
+    .flight-card__time {
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: var(--color-text-main);
+      margin-top: 4px;
+    }
+    .flight-card__middle {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .flight-card__duration {
+      font-size: var(--text-xs);
+      color: var(--color-text-light);
+    }
+    .flight-card__line {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      width: 100%;
+    }
+    .flight-card__line-bar {
+      flex: 1;
+      height: 1px;
+      background-color: var(--color-border);
+    }
+    .flight-card__line svg {
+      width: 14px;
+      height: 14px;
+      color: var(--color-primary);
+    }
+    .flight-card__airport--right { text-align: right; }
+
+    /* ==========================================================================
+       15. 首頁：雙 Tab 切換（待辦 / 事前準備）
+       ========================================================================== */
+    .home-subtab-ctrl { display: none; }
+
+    .home-subtabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 1rem;
+    }
+    .home-subtab-label {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 0;
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-text-light);
+      background-color: var(--color-bg-card);
+      border: 1.5px solid var(--color-border);
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .home-subtab-label svg { width: 15px; height: 15px; }
+
+    #home-tab-todo:checked  ~ .home-subtabs .home-subtab-label--todo,
+    #home-tab-prep:checked  ~ .home-subtabs .home-subtab-label--prep {
+      background-color: var(--color-primary);
+      color: #ffffff;
+      border-color: var(--color-primary);
+    }
+
+    .home-subview { display: none; }
+    #home-tab-todo:checked ~ .home-subviews .home-subview--todo,
+    #home-tab-prep:checked ~ .home-subviews .home-subview--prep { display: block; }
+
+    /* Checklist */
+    .checklist-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .checklist-item:last-child { border-bottom: none; }
+    .checklist-box {
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+      border: 1.5px solid var(--color-primary-mid, var(--color-primary));
+      flex-shrink: 0;
+      margin-top: 1px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .checklist-box--checked {
+      background-color: var(--color-primary);
+      border-color: var(--color-primary);
+    }
+    .checklist-box--checked svg {
+      width: 12px;
+      height: 12px;
+      color: white;
+      stroke-width: 3;
+    }
+    .checklist-item__text {
+      font-size: var(--text-base);
+      color: var(--color-text-main);
+      line-height: 1.4;
+    }
+    .checklist-item__sub {
+      font-size: var(--text-xs);
+      color: var(--color-text-light);
+      margin-top: 2px;
+    }
+    .checklist-item--done .checklist-item__text {
+      text-decoration: line-through;
+      color: var(--color-text-light);
+    }
+
+    /* ==========================================================================
+       16. 行程頁：天氣資訊卡（可愛版）
+       ========================================================================== */
+    .weather-card {
+      background: var(--color-bg-card);
+      border: 2px solid var(--color-border);
+      border-radius: var(--radius-xl);
+      padding: 1rem 1.25rem 0.875rem;
+      margin-bottom: 1.5rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.25s;
+    }
+    .weather-card::before { display: none; }
+    /* 天氣狀態：晴天 */
+    .weather-card--sunny { background: #FFFFFF; border-color: #FDE68A; }
+    /* 天氣狀態：晴時多雲 */
+    .weather-card--partlysunny { background: #FFFFFF; border-color: #FCD34D; }
+    /* 天氣狀態：多雲 */
+    .weather-card--cloudy { background: #FFFFFF; border-color: #D1D5DB; }
+    /* 天氣狀態：下雨 */
+    .weather-card--rainy { background: #FFFFFF; border-color: #BFDBFE; }
+    /* 天氣狀態：大雨 */
+    .weather-card--heavyrain { background: #FFFFFF; border-color: #93C5FD; }
+    .weather-card__top {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+    }
+    .weather-card__icon-wrap {
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .weather-card__icon-wrap svg { width: 54px; height: 54px; }
+    .weather-card__main { flex: 1; }
+    .weather-card__temp {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--color-text-main);
+      line-height: 1;
+      letter-spacing: -1px;
+    }
+    .weather-card__temp span {
+      font-size: var(--text-base);
+      font-weight: 500;
+      color: var(--color-text-muted);
+      letter-spacing: 0;
+    }
+    .weather-card__desc {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      margin-top: 4px;
+    }
+    .weather-card__chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .weather-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: var(--text-xs);
+      font-weight: 600;
+      padding: 5px 11px;
+      border-radius: 99px;
+    }
+    .weather-chip svg { width: 13px; height: 13px; flex-shrink: 0; }
+    .weather-chip--rain {
+      background: #EAF4FF;
+      color: #2563A8;
+    }
+    .weather-chip--outfit {
+      background: #F2EEFF;
+      color: #5E35A8;
+    }
+
+    /* ==========================================================================
+       17. 記帳頁：分類血條統計（遊戲 HUD 風格）
+       ========================================================================== */
+    .expense-cats {
+      margin: 0 1.5rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+    .expense-cat-hint {
+      font-size: 11px;
+      color: var(--color-text-light);
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+      font-family: var(--font-base);
+      text-align: center;
+    }
+    .expense-cat-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .expense-cat-header {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .expense-cat-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .expense-cat-name {
+      font-size: var(--text-xs);
+      font-weight: 600;
+      color: var(--color-text-muted);
+      flex: 1;
+      font-family: var(--font-base);
+    }
+    .expense-cat-amt {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      color: var(--color-text-main);
+      font-family: var(--font-number);
+    }
+    .expense-cat-pct {
+      font-size: 11px;
+      color: var(--color-text-light);
+      font-family: var(--font-number);
+      min-width: 30px;
+      text-align: right;
+    }
+    .expense-cat-track {
+      height: 7px;
+      background: var(--color-bg-input);
+      border-radius: 99px;
+      overflow: hidden;
+      position: relative;
+    }
+    .expense-cat-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: var(--bar-color, var(--color-primary));
+      opacity: 0.78;
+      position: relative;
+    }
+    .expense-cat-fill::after {
+      content: '';
+      position: absolute;
+      top: 1px;
+      left: 5px;
+      right: 5px;
+      height: 2px;
+      border-radius: 99px;
+      background: rgba(255,255,255,0.45);
+    }
+
+    /* ==========================================================================
+       18. 備註卡片：顏色標籤點
+       ========================================================================== */
+    .note-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: inline-block;
+    }
+    .note-dot--red    { background-color: #D97B78; }
+    .note-dot--yellow { background-color: #D4A84B; }
+    .note-dot--green  { background-color: #5E9977; }
+    .note-dot--blue   { background-color: #7D9BAA; }
+
+    /* ==========================================================================
+       19. Hover 輕微上移（僅限行程頁景點卡）
+       ========================================================================== */
+    .event-card {
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+    .event-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 14px rgba(0,0,0,.08);
+    }
+
+    /* 記帳頁：總花費大卡片 */
+    .expense-total {
+      text-align: center;
+      padding: 1.5rem;
+      background-color: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl);
+      margin: 0 1.5rem 1.5rem;
+    }
+    .expense-total__label {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-text-light);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .expense-total__amount {
+      font-size: var(--text-3xl);
+      font-weight: 800;
+      color: var(--color-text-main);
+      margin: 4px 0;
+    }
+    .expense-total__sub {
+      font-size: var(--text-sm);
+      color: var(--color-primary);
+      font-weight: 500;
+    }
+
+    /* ==========================================================================
+       字體套用規則
+       ========================================================================== */
+    /* 旅遊名稱大標題 → Noto Serif TC */
+    .page-trip-header__title,
+    .trip-main-card__title,
+    .home-summary__title,
+    .app-header__title {
+      font-family: var(--font-title);
+    }
+
+    /* 數字、金額、時間、日期 → DM Sans */
+    .expense-total__amount,
+    .flight-card__iata,
+    .flight-card__time,
+    .weather-card__temp,
+    .exchange-value,
+    .home-stat__num,
+    .expense-row__price,
+    .date-item__number,
+    .expense-cat-amt,
+    .expense-cat-pct {
+      font-family: var(--font-number);
+    }
+
+    /* Navbar Tab 文字 → Noto Sans TC */
+    .tab-item__label,
+    .home-subtab-label {
+      font-family: var(--font-base);
+    }
+
+/* ═══════════════════════════════════════════════════════
+   React 相容層（僅補 CSS radio/[open] 無法使用的狀態）
+   ═══════════════════════════════════════════════════════ */
+
+/* home-subtabs active（原本用 #home-tab-xxx:checked ~ 選擇器） */
+.home-subtab-label.is-active {
+  background-color: var(--color-primary);
+  color: #ffffff;
+  border-color: var(--color-primary);
+}
+
+/* event-card chevron 展開（原本用 details[open]） */
+.event-card.is-open .chevron-icon {
+  transform: rotate(180deg);
+}
+
+/* trip-card 標題行：badge 靠右不換行 */
+.trip-card__title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.trip-card__title-row .trip-card__title {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0;
+}
+.trip-card__title-row .badge { flex-shrink: 0; }
+
+/* transit tab active（useState 控制，非 CSS radio） */
+.transit-label.is-active {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+/* expense 新增表單 */
+.expense-form-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+.expense-form-card__title {
+  font-size: var(--text-base);
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+.expense-form-input {
+  width: 100%;
+  background: var(--color-bg-input);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  border: none;
+  font-size: var(--text-base);
+  color: var(--color-text-main);
+  outline: none;
+  font-family: var(--font-base);
+  margin-bottom: 10px;
+}
+.expense-form-input::placeholder { color: var(--color-text-light); }
+.expense-form-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.expense-form-btn {
+  flex: 1;
+  padding: 8px 0;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-input);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-family: var(--font-base);
+}
+.expense-form-btn.is-active {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border-color: var(--color-primary-border);
+}
+.expense-form-actions { display: flex; gap: 8px; margin-top: 4px; }
+
+/* note card img（template 已有，確保 max-width） */
+.note-card__img { max-width: 100%; }
+
+/* ── React compat: tab-item--active (replaces CSS radio selectors) ── */
+.tab-item--active {
+  color: var(--color-primary);
+}
+.tab-item--active .tab-item__indicator {
+  opacity: 1;
+}
