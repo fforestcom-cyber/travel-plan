@@ -151,16 +151,16 @@ export type PayType  = 'cash' | 'card';
 export type Category = '餐飲' | '購物' | '交通' | '景點';
 
 export interface ExpenseItem {
-  id: number; iconType: Category;
+  id: number;
   title: string; date: string; category: Category;
   type: PayType; price: string;
 }
 
 export const EXPENSE_ITEMS: ExpenseItem[] = [
-  { id: 1, iconType: '餐飲', title: '松亭三代豬肉湯飯', date: '06/10', category: '餐飲', type: 'cash', price: '₩ 9,000'  },
-  { id: 2, iconType: '購物', title: 'Olive Young 美妝', date: '06/10', category: '購物', type: 'card', price: '₩ 45,000' },
-  { id: 3, iconType: '交通', title: '地鐵 T-money',     date: '06/10', category: '交通', type: 'cash', price: '₩ 3,200'  },
-  { id: 4, iconType: '景點', title: '甘川文化村門票',   date: '06/11', category: '景點', type: 'cash', price: '₩ 6,800'  },
+  { id: 1, title: '松亭三代豬肉湯飯', date: '06/10', category: '餐飲', type: 'cash', price: '₩ 9,000'  },
+  { id: 2, title: 'Olive Young 美妝', date: '06/10', category: '購物', type: 'card', price: '₩ 45,000' },
+  { id: 3, title: '地鐵 T-money',     date: '06/10', category: '交通', type: 'cash', price: '₩ 3,200'  },
+  { id: 4, title: '甘川文化村門票',   date: '06/11', category: '景點', type: 'cash', price: '₩ 6,800'  },
 ];
 
 // ── 備註 ─────────────────────────────────────────────────

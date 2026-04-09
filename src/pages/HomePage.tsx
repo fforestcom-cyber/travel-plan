@@ -5,6 +5,8 @@ import {
 } from '../data/mockData';
 
 /* ── 匯率換算 ─────────────────────────────────────────── */
+const QUICK_AMOUNTS = [500, 1000, 3000, 5000, 10000];
+
 const ExchangeCard = () => {
   const [twd, setTwd] = useState(1000);
   const krw = Math.round(twd * EXCHANGE.rate).toLocaleString();
@@ -54,6 +56,19 @@ const ExchangeCard = () => {
               </svg>
             </div>
           </div>
+        </div>
+
+        {/* 快速換算按鍵 */}
+        <div className="exchange-quick">
+          {QUICK_AMOUNTS.map(amt => (
+            <button
+              key={amt}
+              className={`exchange-quick__btn${twd === amt ? ' is-active' : ''}`}
+              onClick={() => setTwd(amt)}
+            >
+              {amt >= 1000 ? `${amt / 1000}K` : amt}
+            </button>
+          ))}
         </div>
       </div>
     </>

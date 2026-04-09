@@ -493,6 +493,29 @@
       font-weight: 700;
       color: var(--color-primary);
     }
+    .exchange-quick {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .exchange-quick__btn {
+      flex: 1;
+      padding: 6px 0;
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      font-weight: 700;
+      font-family: var(--font-number);
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      color: var(--color-text-muted);
+      cursor: pointer;
+      transition: background .15s, color .15s, border-color .15s;
+    }
+    .exchange-quick__btn.is-active {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+      color: white;
+    }
 
     /* 橫向日期選擇器 */
     .date-scroller {
@@ -525,7 +548,7 @@
     .date-item { cursor: pointer; }
     .date-item--active .date-item__day { color: var(--color-text-main); }
     .date-item--active .date-item__number {
-      background-color: #1C1C1E;
+      background-color: var(--color-primary);
       color: white;
     }
 
@@ -798,39 +821,50 @@
     /* 單筆記帳列 */
     .expense-row {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      flex-direction: column;
+      gap: 6px;
       padding: 1rem;
       background-color: var(--color-bg-card);
       border: 1px solid var(--color-border);
       border-radius: var(--radius-lg);
       margin-bottom: 12px;
     }
-    .expense-row__left { display: flex; align-items: center; gap: 16px; }
-    .expense-row__icon {
-      background-color: var(--color-bg-input);
-      padding: 12px;
-      border-radius: var(--radius-md);
-      color: var(--color-text-light);
+    .expense-row__top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-    .expense-row__icon svg { width: 20px; height: 20px; }
     .expense-row__title {
-      font-size: var(--text-base);
+      font-size: 15px;
       font-weight: 700;
-      margin-bottom: 4px;
+      color: var(--color-text-main);
     }
-    .expense-row__date {
-      font-size: var(--text-sm);
-      color: var(--color-text-light);
+    .expense-row__price {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--color-text-main);
+    }
+    .expense-row__bottom {
       display: flex;
       align-items: center;
       gap: 6px;
+      font-size: 12px;
+      color: var(--color-text-light);
       font-family: var(--font-number);
     }
-    .expense-row__price {
-      font-size: var(--text-lg);
-      font-weight: 700;
-      color: var(--color-text-main);
+    .expense-row__bottom-actions {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .expense-row__bottom-actions button {
+      background: none;
+      border: none;
+      color: var(--color-text-light);
+      cursor: pointer;
+      display: flex;
+      padding: 3px;
     }
 
     .expense-badge {
@@ -846,9 +880,9 @@
       border-color: var(--color-success-border);
     }
     .expense-badge--card {
-      background-color: var(--color-info-bg);
-      color: var(--color-info);
-      border-color: var(--color-info-border);
+      background-color: #FAF0F0;
+      color: #B05A5A;
+      border-color: #DEB8B8;
     }
 
     /* ==========================================================================
@@ -1074,9 +1108,9 @@
       border-radius: 99px;
     }
     .flight-card__direction--dep {
-      background-color: var(--color-primary-light);
-      color: var(--color-primary-dark);
-      border: 1px solid var(--color-primary-border);
+      background-color: var(--color-warning-bg);
+      color: var(--color-warning);
+      border: 1px solid #E8C9A8;
     }
     .flight-card__direction--arr {
       background-color: var(--color-success-bg);
@@ -1538,24 +1572,85 @@
 }
 .expense-form-input::placeholder { color: var(--color-text-light); }
 .expense-form-row { display: flex; gap: 8px; margin-bottom: 10px; }
-.expense-form-btn {
+/* ── 記帳新增表單：所有按鈕基底（未選中） ── */
+.expense-form-btn,
+.expense-form-cancel,
+.expense-form-submit {
   flex: 1;
   padding: 8px 0;
-  border-radius: var(--radius-md);
+  border-radius: 12px;
   font-size: var(--text-sm);
   font-weight: 600;
-  border: 1px solid var(--color-border);
-  background: var(--color-bg-input);
-  color: var(--color-text-muted);
+  border: 1px solid #BDC4CC;
+  background: #F0F2F4;
+  color: #9ca5af;
   cursor: pointer;
   font-family: var(--font-base);
+  transition: all 0.2s;
 }
+/* 分類按鈕 選中 */
 .expense-form-btn.is-active {
-  background: var(--color-primary-light);
-  color: var(--color-primary);
-  border-color: var(--color-primary-border);
+  background: #7D9BAA;
+  color: white;
+  border-color: #7D9BAA;
 }
+/* 付款：現金 選中 */
+.expense-form-btn--cash.is-active {
+  background: #EBF5EF;
+  color: #5E9977;
+  border-color: #5E9977;
+}
+/* 付款：刷卡 選中 */
+.expense-form-btn--card.is-active {
+  background: #F5EBEB;
+  color: #B05A5A;
+  border-color: #B05A5A;
+}
+/* 取消按鈕（固定樣式，無 is-active） */
+.expense-form-cancel {
+  padding: 10px 16px;
+}
+/* + 新增按鈕 */
+.expense-form-submit {
+  padding: 10px 16px;
+  background: #7D9BAA;
+  color: white;
+  border-color: #7D9BAA;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.expense-form-submit:hover:not(:disabled) { background: #6a8999; border-color: #6a8999; }
+.expense-form-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 .expense-form-actions { display: flex; gap: 8px; margin-top: 4px; }
+
+/* ── 記帳 inline 編輯表單容器 ── */
+.expense-edit-form {
+  background: #FFFFFF;
+  border: 1px solid #D8E3E9;
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+/* 編輯表單內輸入欄位：只保留下底線 */
+.expense-edit-form .expense-form-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #D8E3E9;
+  border-radius: 0;
+  padding: 8px 4px;
+  font-size: 15px;
+  color: var(--color-text-main);
+  outline: none;
+}
+.expense-edit-form .expense-form-input:focus {
+  border-bottom-color: var(--color-primary);
+}
+.expense-edit-form .expense-form-input::placeholder {
+  color: var(--color-text-light);
+}
 
 /* note card img（template 已有，確保 max-width） */
 .note-card__img { max-width: 100%; }
@@ -1566,4 +1661,11 @@
 }
 .tab-item--active .tab-item__indicator {
   opacity: 1;
+}
+
+/* ── React compat: app-content（template 用 .view-container，React 用 .app-content） ── */
+.app-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 100px;
 }
