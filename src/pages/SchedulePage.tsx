@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import WeatherCard from '../components/home/WeatherCard';
+import DayPlanView from '../components/layout/DayPlanView';
 import {
   TRIP_INFO, SCHEDULE_EVENTS, ScheduleEvent,
   TagItem,
 } from '../data/mockData';
+import day1Plan from '../data/scheduleDay1';
 
 /* ── 小元件 ───────────────────────────────────────────── */
 const PinIcon = () => (
@@ -61,49 +63,53 @@ const TagGroup = ({ tags }: { tags: TagItem[] }) => (
   </div>
 );
 
-/* ── 交通切換 tab（useState 取代 CSS radio） ─────────────── */
-const TransitTabs = ({ subway, taxi }: { subway: string; taxi: string }) => {
-  const [active, setActive] = useState<'subway' | 'taxi'>('subway');
-  return (
-    <div style={{ marginBottom: '1rem' }}>
-      <div className="transit-tabs">
-        <button
-          className={`transit-label${active === 'subway' ? ' is-active' : ''}`}
-          onClick={() => setActive('subway')}
-        >
-          <svg viewBox="0 0 24 24" style={{ width: 16, height: 16 }}>
-            <rect x="4" y="3" width="16" height="16" rx="2" />
-            <path d="M4 11h16" /><path d="M12 3v8" />
-            <path d="M8 19l-2 3" /><path d="M16 19l2 3" />
-          </svg>
-          大眾運輸
-        </button>
-        <button
-          className={`transit-label${active === 'taxi' ? ' is-active' : ''}`}
-          onClick={() => setActive('taxi')}
-        >
-          <svg viewBox="0 0 24 24" style={{ width: 16, height: 16 }}>
-            <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" />
-            <circle cx="7" cy="17" r="2" /><path d="M9 17h6" /><circle cx="17" cy="17" r="2" />
-          </svg>
-          計程車
-        </button>
-      </div>
-      <div className="transit-content">
-        {active === 'subway' ? subway : taxi}
-      </div>
+const TransitBlock = ({ icon, label, content }: { icon: React.ReactNode; label: string; content: string }) => (
+  <div style={{ marginBottom: 14 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+      {icon}
+      <span style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>{label}</span>
     </div>
-  );
-};
+    <div style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.7 }}>
+      {content.split('\n').map((line, i) => (
+        <p key={i} style={{ margin: '0 0 4px' }}>{line}</p>
+      ))}
+    </div>
+  </div>
+);
 
-/* ── EventCard（details/summary → useState） ─────────────── */
+const TransitTabs = ({ subway, taxi }: { subway: string; taxi: string }) => (
+  <div style={{ marginBottom: '1rem' }}>
+    <TransitBlock
+      icon={
+        <svg viewBox="0 0 24 24" style={{ width: 15, height: 15, color: '#7d9baa', flexShrink: 0 }} fill="none" stroke="currentColor" strokeWidth={2}>
+          <rect x="4" y="3" width="16" height="16" rx="2" />
+          <path d="M4 11h16" /><path d="M12 3v8" />
+          <path d="M8 19l-2 3" /><path d="M16 19l2 3" />
+        </svg>
+      }
+      label="大眾運輸"
+      content={subway}
+    />
+    <div style={{ height: 1, background: '#e8e0d8', margin: '4px 0 14px' }} />
+    <TransitBlock
+      icon={
+        <svg viewBox="0 0 24 24" style={{ width: 15, height: 15, color: '#c4a882', flexShrink: 0 }} fill="none" stroke="currentColor" strokeWidth={2}>
+          <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" />
+          <circle cx="7" cy="17" r="2" /><path d="M9 17h6" /><circle cx="17" cy="17" r="2" />
+        </svg>
+      }
+      label="計程車"
+      content={taxi}
+    />
+  </div>
+);
+
 const EventCard = ({ ev }: { ev: ScheduleEvent }) => {
   const [open, setOpen] = useState(false);
   const { detail: d } = ev;
 
   return (
     <div className={`event-card${open ? ' is-open' : ''}`}>
-      {/* summary 行 */}
       <div className="event-card__summary" onClick={() => setOpen(!open)} style={{ cursor: 'pointer' }}>
         <div className="event-card__thumbnail">
           <div className="event-card__thumb-icon">
@@ -130,7 +136,6 @@ const EventCard = ({ ev }: { ev: ScheduleEvent }) => {
         </div>
       </div>
 
-      {/* 展開詳情 */}
       {open && (
         <div className="event-card__details">
           <p className="event-card__desc">{d.desc}</p>
@@ -204,17 +209,22 @@ const SchedulePage = () => (
     </div>
 
     <div className="section-px">
-      {/* 月份 + 日期選擇 + 天氣 */}
       <div className="mb-6">
         <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 16 }}>2026年 6月</div>
         <WeatherCard />
       </div>
 
-      <h2 style={{ fontSize: 17, fontWeight: 700, marginBottom: 16 }}>今日行程</h2>
-
-      {SCHEDULE_EVENTS.map((ev) => (
-        <EventCard key={ev.title} ev={ev} />
-      ))}
+      {day1Plan
+        ? <DayPlanView plan={day1Plan} />
+        : (
+          <>
+            <h2 style={{ fontSize: 17, fontWeight: 700, marginBottom: 16 }}>今日行程</h2>
+            {SCHEDULE_EVENTS.map((ev) => (
+              <EventCard key={ev.title} ev={ev} />
+            ))}
+          </>
+        )
+      }
     </div>
   </>
 );

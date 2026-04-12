@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 1 計畫書｜釜山抵達日</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;900&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --ink: #1C1B18;
+  --ink-soft: #5A5850;
+  --ink-muted: #9A9890;
+  --paper: #FAF8F4;
+  --paper-warm: #F3EFE7;
+  --paper-border: #E5DFD3;
+  --accent: #C85A2A;
+  --accent-pale: #F5E8E0;
+  --teal: #2A7A6A;
+  --teal-pale: #E0F0EC;
+  --gold: #B8861A;
+  --gold-pale: #FAF0D8;
+  --blue: #2A5A8A;
+  --blue-pale: #E0EAF5;
+  --photo-bg: #F0EBE3;
+  --photo-border: #D4C9BC;
+  --step-size: 28px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Noto Serif TC', serif;
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.7;
+  padding: 32px 20px 60px;
+}
+
+.page { max-width: 660px; margin: 0 auto; }
+
+/* ── 封面 ── */
+.cover {
+  text-align: center;
+  padding: 40px 0 36px;
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: 36px;
+}
+.cover-eyebrow {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.cover-title {
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  margin-bottom: 8px;
+}
+.cover-title em { font-style: normal; color: var(--accent); }
+.cover-sub { font-size: 13px; color: var(--ink-soft); }
+.cover-tags {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.ctag {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  padding: 3px 10px;
+  border: 1px solid var(--paper-border);
+  border-radius: 20px;
+  color: var(--ink-soft);
+  letter-spacing: 0.06em;
+}
+
+/* ── 小節 ── */
+.section { margin-bottom: 36px; }
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--paper-border);
+}
+.section-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+.section-title { font-size: 16px; font-weight: 600; }
+.section-time {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-muted);
+  margin-left: auto;
+}
+
+/* ── 照片參考卡 ── */
+.photo-ref {
+  background: var(--photo-bg);
+  border: 1px solid var(--photo-border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 8px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.photo-ref-icon { font-size: 18px; flex-shrink: 0; }
+.photo-ref-body { flex: 1; }
+.photo-ref-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+.photo-ref-desc { font-size: 12px; color: var(--ink-soft); line-height: 1.5; margin-bottom: 5px; }
+.photo-ref-links { display: flex; flex-wrap: wrap; gap: 6px; }
+.photo-link {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--blue);
+  background: var(--blue-pale);
+  padding: 2px 10px;
+  border-radius: 20px;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+.photo-link:hover { opacity: 0.75; }
+.photo-link.teal { color: var(--teal); background: var(--teal-pale); }
+.photo-link.amber { color: var(--gold); background: var(--gold-pale); }
+.photo-link.red { color: var(--accent); background: var(--accent-pale); }
+
+/* ── info card ── */
+.info-card {
+  border: 1px solid var(--paper-border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  background: white;
+}
+.info-card.accent { border-left: 3px solid var(--accent); }
+.info-card.teal   { border-left: 3px solid var(--teal); }
+.info-card.gold   { border-left: 3px solid var(--gold); }
+.info-card.blue   { border-left: 3px solid var(--blue); }
+.info-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 5px;
+  font-size: 13px;
+}
+.info-row:last-child { margin-bottom: 0; }
+.info-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-muted);
+  min-width: 52px;
+  padding-top: 2px;
+  flex-shrink: 0;
+}
+.info-val { color: var(--ink); line-height: 1.55; }
+.info-val strong { font-weight: 600; }
+.ko {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-soft);
+  background: var(--paper-warm);
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: 4px;
+}
+
+/* ── 步驟 ── */
+.steps { position: relative; padding-left: 44px; }
+.steps::before {
+  content: '';
+  position: absolute;
+  left: 13px;
+  top: 14px;
+  bottom: 14px;
+  width: 1.5px;
+  background: var(--paper-border);
+}
+.step { position: relative; margin-bottom: 22px; }
+.step:last-child { margin-bottom: 0; }
+.step-dot {
+  position: absolute;
+  left: -38px;
+  top: 3px;
+  width: var(--step-size);
+  height: var(--step-size);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  color: white;
+  border: 2px solid var(--paper);
+}
+.dot-accent { background: var(--accent); }
+.dot-teal   { background: var(--teal); }
+.dot-gold   { background: var(--gold); }
+.dot-blue   { background: var(--blue); }
+.dot-gray   { background: var(--ink-muted); }
+.step-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; line-height: 1.4; }
+.step-body { font-size: 13px; color: var(--ink-soft); line-height: 1.65; }
+.step-body p { margin-bottom: 4px; }
+.step-body p:last-child { margin-bottom: 0; }
+.step-body strong { color: var(--ink); font-weight: 600; }
+
+/* ── ticket ── */
+.ticket {
+  background: var(--paper-warm);
+  border: 1px dashed var(--paper-border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-top: 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-soft);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.ticket span { color: var(--ink); font-weight: 500; }
+
+/* ── alert ── */
+.alert {
+  border-radius: 8px;
+  padding: 9px 13px;
+  font-size: 12px;
+  line-height: 1.6;
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.alert-icon { flex-shrink: 0; font-size: 14px; }
+.alert.warn { background: var(--gold-pale); color: #6B4E10; }
+.alert.tip  { background: var(--teal-pale); color: #1A4A3A; }
+.alert.note { background: var(--blue-pale); color: #1A3A5A; }
+
+/* ── timeline summary ── */
+.timeline-summary {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  border: 1px solid var(--paper-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: white;
+}
+.ts-time {
+  background: var(--paper-warm);
+  padding: 9px 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--paper-border);
+  display: flex;
+  align-items: center;
+}
+.ts-content {
+  padding: 9px 14px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--paper-border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ts-time:last-of-type,
+.ts-content:last-of-type { border-bottom: none; }
+.ts-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── menu ── */
+.menu-box {
+  background: white;
+  border: 1px solid var(--paper-border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.menu-header {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 7px 14px;
+  font-size: 12px;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 0.06em;
+}
+.menu-body { padding: 10px 14px; }
+.menu-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 5px 0;
+  border-bottom: 1px dotted var(--paper-border);
+  font-size: 13px;
+  gap: 12px;
+}
+.menu-item:last-child { border-bottom: none; }
+.menu-note { font-size: 11px; color: var(--ink-muted); text-align: right; }
+
+/* ── checklist ── */
+.checklist { list-style: none; }
+.checklist li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 7px 0;
+  font-size: 13px;
+  border-bottom: 1px dotted var(--paper-border);
+  line-height: 1.55;
+}
+.checklist li:last-child { border-bottom: none; }
+.check-icon { flex-shrink: 0; font-size: 14px; margin-top: 1px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- 封面 -->
+  <div class="cover">
+    <div class="cover-eyebrow">釜山自由行 5天4夜 · 行程計畫書</div>
+    <div class="cover-title">Day <em>1</em><br>抵達釜山・入住西面</div>
+    <div class="cover-sub">金海機場 → 西面 Urbanstay → 松亭三代豬肉湯飯 → 田浦文創 → 宵夜布帳馬車</div>
+    <div class="cover-tags">
+      <span class="ctag">輕軌 + 地鐵</span>
+      <span class="ctag">總車資 ₩1,800</span>
+      <span class="ctag">全程約 43 分鐘</span>
+      <span class="ctag">抵達時間 15:30</span>
+    </div>
+  </div>
+
+  <!-- 總覽 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">00</span>
+      <span class="section-title">今日行程總覽</span>
+    </div>
+    <div class="timeline-summary">
+      <div class="ts-time">15:30</div><div class="ts-content"><span class="ts-dot" style="background:var(--accent)"></span>金海機場降落・入境</div>
+      <div class="ts-time">15:50</div><div class="ts-content"><span class="ts-dot" style="background:var(--gold)"></span>機場換錢 + 領取 Visit Busan Pass</div>
+      <div class="ts-time">16:10</div><div class="ts-content"><span class="ts-dot" style="background:var(--teal)"></span>搭輕軌 504 → 沙上站 501（7 分鐘）</div>
+      <div class="ts-time">16:25</div><div class="ts-content"><span class="ts-dot" style="background:var(--teal)"></span>步行換乘地鐵沙上站 227（6–7 分鐘）</div>
+      <div class="ts-time">16:40</div><div class="ts-content"><span class="ts-dot" style="background:var(--teal)"></span>地鐵 2 號線 → 西面站 219（14 分鐘）</div>
+      <div class="ts-time">17:00</div><div class="ts-content"><span class="ts-dot" style="background:var(--blue)"></span>抵達飯店・check-in・梳洗</div>
+      <div class="ts-time">18:30</div><div class="ts-content"><span class="ts-dot" style="background:var(--accent)"></span>晚餐：松亭三代豬肉湯飯</div>
+      <div class="ts-time">20:00</div><div class="ts-content"><span class="ts-dot" style="background:var(--gold)"></span>田浦文創商圈初探</div>
+      <div class="ts-time">22:00</div><div class="ts-content"><span class="ts-dot" style="background:var(--ink-muted)"></span>宵夜：西面布帳馬車</div>
+    </div>
+  </div>
+
+  <!-- 01 入境 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <span class="section-title">抵達金海機場・入境手續</span>
+      <span class="section-time">15:30–15:50</span>
+    </div>
+    <div class="info-card accent">
+      <div class="info-row">
+        <span class="info-label">入境卡</span>
+        <span class="info-val">建議出發前 3 天在網上填寫韓國電子入境卡（e-Arrival Card），大幅縮短排隊時間。若未填，可在飛機上跟空服員索取紙本。</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">快速通關</span>
+        <span class="info-val">已申請 Smart Pass（SES）者可走自動通關，無需排人工審查隊。</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">出關後</span>
+        <span class="info-val">取行李後走綠色通道（無申報）直接出來，右轉跟著 <strong>Light Rail 輕軌</strong>指標走。</span>
+      </div>
+    </div>
+    <div class="photo-ref">
+      <div class="photo-ref-icon">📸</div>
+      <div class="photo-ref-body">
+        <div class="photo-ref-label">圖片參考</div>
+        <div class="photo-ref-desc">出機場後如何找到輕軌指標、過馬路右轉的路線實拍照</div>
+        <div class="photo-ref-links">
+          <a class="photo-link" href="https://debbiechien.com/busan-gimhae-airport-transportation/" target="_blank">→ Debbie 出機場步驟圖解</a>
+          <a class="photo-link teal" href="https://13blog.tw/busan-tourism-240613/" target="_blank">→ 機場出口照片教學</a>
+          <a class="photo-link amber" href="https://panpanlife.com/busan-arrival/" target="_blank">→ 2026最新入境全程圖解</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 02 換錢 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <span class="section-title">機場換錢・儲值交通卡</span>
+      <span class="section-time">15:50–16:05</span>
+    </div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-dot dot-gold">①</div>
+        <div class="step-title">前往輕軌機場站內的 Money Box 換錢所</div>
+        <div class="step-body">
+          <p>出入境大廳後 → 跟著 <strong>Light Rail</strong> 指標出門 → 過斑馬線後<strong>立刻右轉</strong> → 沿棚子走約 5 分鐘到輕軌站入口。</p>
+          <p>進輕軌站後、刷卡前，右手邊就是 <strong>Money Box 換錢所</strong>（黃色招牌）。人工窗口 06:00–21:00；門口另有 24 小時自助換匯機（無人機台）。</p>
+          <p>換錢需出示護照，直接給台幣即可，無需手續費，匯率優於機場內銀行。</p>
+        </div>
+        <div class="alert warn">
+          <span class="alert-icon">⚠</span>
+          布帳馬車、小吃攤多為現金消費。建議換 <strong>₩50,000–80,000</strong> 足夠今晚晚餐＋宵夜＋小雜支。
+        </div>
+        <div class="photo-ref">
+          <div class="photo-ref-icon">📸</div>
+          <div class="photo-ref-body">
+            <div class="photo-ref-label">Money Box 長這樣</div>
+            <div class="photo-ref-desc">黃色招牌換錢所外觀、換匯流程實拍、門口自助換匯機照片</div>
+            <div class="photo-ref-links">
+              <a class="photo-link amber" href="https://rowing2005.pixnet.net/blog/posts/9577267384" target="_blank">→ 呆呆齡實拍外觀＋流程</a>
+              <a class="photo-link" href="https://lizzzstyle.tw/money-box-gimhae/" target="_blank">→ Liz 換錢所全攻略照</a>
+              <a class="photo-link teal" href="https://rebeccafoodaily.com/gimhae-airport-money-box/" target="_blank">→ 黃色招牌實拍</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-dot dot-gold">②</div>
+        <div class="step-title">儲值交通卡</div>
+        <div class="step-body">
+          <p>換完錢後，在輕軌站內找 <strong>藍色箭頭「Self Service Charger」</strong> 儲值機（非售票機）。</p>
+          <p>介面可切換<strong>繁體中文</strong>，依畫面操作儲值即可。</p>
+          <p>若持 Visit Busan Pass 實體卡，此卡本身含交通卡功能，直接儲值即可。</p>
+        </div>
+        <div class="ticket">
+          建議儲值 <span>₩10,000–20,000</span>（足夠今日全程地鐵來回）
+        </div>
+        <div class="photo-ref">
+          <div class="photo-ref-icon">📸</div>
+          <div class="photo-ref-body">
+            <div class="photo-ref-label">儲值機長這樣</div>
+            <div class="photo-ref-desc">輕軌站內儲值機外觀、中文介面操作畫面</div>
+            <div class="photo-ref-links">
+              <a class="photo-link teal" href="https://13blog.tw/busan-tourism-240613/" target="_blank">→ 儲值機操作圖解（含中文介面）</a>
+              <a class="photo-link amber" href="https://panpanlife.com/busan-arrival/" target="_blank">→ 自助儲值全程照片</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 03 輕軌 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <span class="section-title">搭輕軌：機場站（504）→ 沙上站（501）</span>
+      <span class="section-time">16:10–16:18｜車程 7 分鐘</span>
+    </div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-dot dot-teal">①</div>
+        <div class="step-title">刷卡進站・上 2 樓月台</div>
+        <div class="step-body">
+          <p>儲值完成後刷卡進閘機，搭手扶梯到 <strong>2 樓月台</strong>。</p>
+          <p>輕軌只有一條線（紫線），月台看指示牌，搭往 <strong>「沙上 Sasang」</strong> 方向（往西釜山）。</p>
+        </div>
+        <div class="photo-ref">
+          <div class="photo-ref-icon">📸</div>
+          <div class="photo-ref-body">
+            <div class="photo-ref-label">輕軌月台長這樣</div>
+            <div class="photo-ref-desc">機場站月台外觀、紫色輕軌車廂內部、刷卡閘機照片</div>
+            <div class="photo-ref-links">
+              <a class="photo-link teal" href="https://judyer.com/lightrailno2/" target="_blank">→ 小梨輕軌月台實拍</a>
+              <a class="photo-link" href="https://debbiechien.com/busan-gimhae-airport-transportation/" target="_blank">→ Debbie 輕軌車廂內部照</a>
+              <a class="photo-link amber" href="https://www.funliday.com/posts/korean-travel-busan-airport-to-downtown-lrt/" target="_blank">→ Funliday 輕軌搭乘步驟圖</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-dot dot-teal">②</div>
+        <div class="step-title">乘車・共 3 站到沙上</div>
+        <div class="step-body">
+          <p>路線：<strong>機場站（504）→ 公項站（503）→ 府院站（502）→ 沙上站（501）</strong></p>
+          <p>車廂門邊螢幕會顯示下一站站名。車程約 <strong>7 分鐘</strong>，非常快，不用擔心坐過站。</p>
+        </div>
+        <div class="ticket">
+          504 → 501 ｜ 車程 <span>7 分鐘</span> ｜ T-money <span>₩1,300</span>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-dot dot-teal">③</div>
+        <div class="step-title">沙上站（501）下車・務必刷卡出站</div>
+        <div class="step-body">
+          <p>到沙上站後，<strong>一定要刷卡出站</strong>。輕軌與地鐵是兩個不同系統，先出站才能享轉乘優惠。</p>
+        </div>
+        <div class="alert warn">
+          <span class="alert-icon">⚠</span>
+          沒有刷出站就直接走去地鐵會無法享轉乘優惠，且可能被追加費用。刷出站、走到地鐵站、再刷入站，這三步缺一不可。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 04 步行換乘 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <span class="section-title">步行換乘：輕軌沙上 → 地鐵沙上站（227）</span>
+      <span class="section-time">16:18–16:25｜步行 6–7 分鐘</span>
+    </div>
+    <div class="info-card teal">
+      <div class="info-row">
+        <span class="info-label">注意</span>
+        <span class="info-val">輕軌站與地鐵站<strong>不在同一棟建築</strong>，需步行約 6–7 分鐘。沿路有<strong>綠色指標</strong>引導，路上不需過馬路，有遮蓋不怕雨。</span>
+      </div>
+    </div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-dot dot-teal">①</div>
+        <div class="step-title">出輕軌閘口・跟著綠色指標走</div>
+        <div class="step-body">
+          <p>刷卡出輕軌站後，地板和牆上立刻出現<strong>綠色「2號線」指標</strong>，跟著走就對了。</p>
+          <p>沿途是室內走廊，一直走到底看到 <strong>「Tracks to Metro」</strong> 或「地铁乘车处」標示，表示快到了。</p>
+        </div>
+        <div class="photo-ref">
+          <div class="photo-ref-icon">📸</div>
+          <div class="photo-ref-body">
+            <div class="photo-ref-label">換乘走廊長這樣</div>
+            <div class="photo-ref-desc">地板綠色指標、走廊路線、轉乘過程全程實拍</div>
+            <div class="photo-ref-links">
+              <a class="photo-link teal" href="https://judyer.com/lightrailno2/" target="_blank">→ 小梨沙上站換乘完整照片</a>
+              <a class="photo-link" href="https://www.funliday.com/posts/korean-travel-busan-airport-to-downtown-lrt/" target="_blank">→ Funliday 地板綠色指標照</a>
+              <a class="photo-link amber" href="https://nicklee.tw/2460/pus-airport-transportation/" target="_blank">→ 小氣少年換乘路線全程圖</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-dot dot-teal">②</div>
+        <div class="step-title">找有電梯的閘口再進站</div>
+        <div class="step-body">
+          <p>走到地鐵 2 號線入口時，<strong>先不要刷第一個看到的閘機</strong>。</p>
+          <p>旁邊指標會寫「電梯在前方 50 公尺」，帶行李的人繼續往前找<strong>有電梯的閘口</strong>再刷卡進站。</p>
+        </div>
+        <div class="alert warn">
+          <span class="alert-icon">⚠</span>
+          部分閘機有旋轉鐵竿，行李箱容易卡住。找到寬閘口或輪椅通道，把行李箱<strong>先放倒打橫推過去</strong>，人再刷卡跟著進，不要硬擠。
+        </div>
+        <div class="photo-ref">
+          <div class="photo-ref-icon">📸</div>
+          <div class="photo-ref-body">
+            <div class="photo-ref-label">閘機行李通過方式</div>
+            <div class="photo-ref-desc">地鐵閘機類型、行李箱過閘方式、電梯位置照片</div>
+            <div class="photo-ref-links">
+              <a class="photo-link amber" href="https://nicklee.tw/2460/pus-airport-transportation/" target="_blank">→ 閘機行李過法實拍說明</a>
+              <a class="photo-link" href="https://www.funliday.com/posts/korea-travel-busan-subway-transfer-informaiton/" target="_blank">→ 電梯位置＋閘口照片</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-dot dot-teal">③</div>
+        <div class="step-title">刷卡進地鐵沙上站（227）</div>
+        <div class="step-body">
+          <p>找到有電梯的閘口後，再次刷卡進站。T-money 自動計算轉乘優惠，30 分鐘內僅追加 <strong>₩500</strong>。</p>
+        </div>
+        <div class="ticket">
+          轉乘追加 <span>₩500</span>（自動扣）｜ 輕軌 ₩1,300 + 轉乘 ₩500 = 合計 <span>₩1,800</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 05 地鐵 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <span class="section-title">搭地鐵：沙上站（227）→ 西面站（219）</span>
+      <span class="section-time">16:25–16:40｜車程 14 分鐘</span>
+    </div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-dot dot-teal">①</div>
+        <div class="step-title">找月台・往「甘田 장산方向」</div>
+        <div class="step-body">
+          <p>進站後看月台指示牌，搭 2 號線（<strong>綠線</strong>），往 <strong>甘田（장산 Jangsan）</strong>方向，即往東。</p>
+          <p>西面是大站，廣播有韓英雙語，聽到 <strong>「Seomyeon」</strong> 就準備下車。</p>
+        </div>
+        <div class="photo-ref">
+          <div class="photo-ref-icon">📸</div>
+          <div class="photo-ref-body">
+            <div class="photo-ref-label">地鐵月台怎麼確認方向</div>
+            <div class="photo-ref-desc">地鐵 2 號線月台、往甘田方向指示牌、車廂門邊站名顯示螢幕</div>
+            <div class="photo-ref-links">
+              <a class="photo-link teal" href="https://judyer.com/lightrailno2/" target="_blank">→ 小梨地鐵搭乘方向圖解</a>
+              <a class="photo-link" href="https://nicklee.tw/2460/pus-airport-transportation/" target="_blank">→ 車廂門邊螢幕確認站號</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-dot dot-teal">②</div>
+        <div class="step-title">西面站（219）下車・找電梯出站</div>
+        <div class="step-body">
+          <p>車程約 14 分鐘，看車廂螢幕確認站號 <strong>219</strong> 即下車。</p>
+          <p>西面站出口多，帶行李請優先找<strong>電梯</strong>，避免扛行李走樓梯。</p>
+          <p>出站後直接開 <strong>Naver Map</strong> 導航至飯店，步行 3–8 分鐘。</p>
+        </div>
+        <div class="ticket">
+          全程 機場站 504 → 西面站 219 ｜ <span>₩1,800</span> ｜ 總時間（含換乘步行） <span>約 43 分鐘</span>
+        </div>
+        <div class="alert note">
+          <span class="alert-icon">ℹ</span>
+          西面站有 1、2、3、7、8 號等多個出口。往 Urbanstay Seomyeon 飯店的出口依訂房確認，出站後直接開 Naver Map 最保險。
+        </div>
+        <div class="photo-ref">
+          <div class="photo-ref-icon">📸</div>
+          <div class="photo-ref-body">
+            <div class="photo-ref-label">西面站出站・找電梯</div>
+            <div class="photo-ref-desc">西面站月台電梯位置、出口指標、行李過閘方式</div>
+            <div class="photo-ref-links">
+              <a class="photo-link" href="https://www.funliday.com/posts/korea-travel-busan-subway-transfer-informaiton/" target="_blank">→ Funliday 西面站電梯位置</a>
+              <a class="photo-link amber" href="https://nicklee.tw/2460/pus-airport-transportation/" target="_blank">→ 西面站出站完整圖解</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 06 飯店 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <span class="section-title">抵達飯店・Check-in</span>
+      <span class="section-time">17:00–18:30</span>
+    </div>
+    <div class="info-card blue">
+      <div class="info-row">
+        <span class="info-label">飯店</span>
+        <span class="info-val"><strong>Urbanstay Seomyeon</strong> <span class="ko">어반스테이 서면</span>｜Day 1–2 住宿</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Check-in</span>
+        <span class="info-val">一般 15:00 後。若抵達時房間未好，可先寄放行李出門。</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">預訂提醒</span>
+        <span class="info-val">Check-in 後確認飯店是否在 ZIM CARRY 合作名單，若是，在 KKday 預訂 Day 3 行李宅配至海雲台飯店。</span>
+      </div>
+    </div>
+    <div class="alert tip">
+      <span class="alert-icon">💡</span>
+      整理好行李後輕裝出發。晚上只需帶錢包＋手機＋現金，不用帶大包。
+    </div>
+  </div>
+
+  <!-- 07 晚餐 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">07</span>
+      <span class="section-title">晚餐：松亭三代豬肉湯飯</span>
+      <span class="section-time">18:30–19:30</span>
+    </div>
+    <div class="info-card accent">
+      <div class="info-row">
+        <span class="info-label">店名</span>
+        <span class="info-val"><span class="ko">송정3대국밥</span>（松亭三代豬肉湯飯）｜1946年創立，近 80 年老店</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">位置</span>
+        <span class="info-val">西面站 1 號出口步行約 3–5 分鐘。Naver Map 搜尋 <strong>「송정3대국밥 서면」</strong>，沿路看到招牌上有「3代」字樣＋電視台採訪報導貼紙即到。</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">營業</span>
+        <span class="info-val"><strong>24 小時</strong>，任何時間都可以來，幾乎全天都有客人。</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">付款</span>
+        <span class="info-val">現金或刷卡均可。</span>
+      </div>
+    </div>
+
+    <div class="menu-box">
+      <div class="menu-header">點餐建議（食量小版）</div>
+      <div class="menu-body">
+        <div class="menu-item">
+          <span>豬肉湯飯 <span class="ko">돼지국밥</span></span>
+          <span class="menu-note">兩人各一碗，主食</span>
+        </div>
+        <div class="menu-item">
+          <span>白切肉套餐 <span class="ko">수육</span></span>
+          <span class="menu-note">可替代湯飯，附小碗湯，肉嫩分量足</span>
+        </div>
+        <div class="menu-item">
+          <span>血腸 <span class="ko">순대</span></span>
+          <span class="menu-note">可單點追加，兩人分一份嘗鮮即可</span>
+        </div>
+        <div class="menu-item">
+          <span>小菜自取區</span>
+          <span class="menu-note">洋蔥、泡菜、蒜頭、辣韭菜，旁邊有鹽巴可自行調湯頭鹹淡</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert note">
+      <span class="alert-icon">ℹ</span>
+      <strong>點餐流程</strong>：入座後服務員會送上中英文菜單（不會韓文也沒問題），選好後報給服務員即可，不用走到櫃台。湯飯本身<strong>沒有調味</strong>，鹹淡靠鹽巴自己加，喜歡重口味多加一點。
+    </div>
+    <div class="alert tip">
+      <span class="alert-icon">💡</span>
+      食量不大 → 兩人各點一碗湯飯就夠，血腸視情況加點，不要多點，留肚子給宵夜黑糖餅。在地人與觀光客比例約 7:3，氣氛熱鬧不用擔心格格不入。
+    </div>
+
+    <div class="photo-ref">
+      <div class="photo-ref-icon">📸</div>
+      <div class="photo-ref-body">
+        <div class="photo-ref-label">餐廳外觀・菜單・上桌照片</div>
+        <div class="photo-ref-desc">招牌「3代」字樣外觀、中文菜單版本、湯飯端上桌照、小菜自取區、白切肉擺盤</div>
+        <div class="photo-ref-links">
+          <a class="photo-link red" href="https://rowing2005.pixnet.net/blog/post/577433816" target="_blank">→ 呆呆齡｜招牌＋中文菜單實拍</a>
+          <a class="photo-link amber" href="https://mimigo.tw/pork-rice-soup/" target="_blank">→ Mimi｜店內環境＋湯飯照</a>
+          <a class="photo-link" href="https://starseedgirl.com/%E3%80%8A%E6%9D%BE%E4%BA%AD%E4%B8%89%E4%BB%A3%E8%B1%AC%E8%82%89%E6%B9%AF%E9%A3%AF%E3%80%8B%EC%86%A1%EC%A0%953%EB%8C%80%EA%B5%AD%EB%B0%A5-%E9%87%9C%E5%B1%B1%C2%B7%E8%A5%BF%E9%9D%A2%E7%AB%99%EF%BD%9C%E9%9F%93%E5%9C%8B/" target="_blank">→ Starseed｜白切肉＋小菜自取照</a>
+          <a class="photo-link teal" href="https://ciaoz.tw/songjong-porksoup/" target="_blank">→ 巧莉｜血腸菜單解說</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 08 田浦 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">08</span>
+      <span class="section-title">田浦文創商圈初探</span>
+      <span class="section-time">20:00–22:00</span>
+    </div>
+    <div class="info-card gold">
+      <div class="info-row">
+        <span class="info-label">位置</span>
+        <span class="info-val">從飯店步行約 5–10 分鐘，Naver Map 搜尋「전포카페거리」。</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">今晚</span>
+        <span class="info-val">輕鬆初探，<strong>CRR 寵物店 13:00 才開</strong>，留 Day 5 補逛。</span>
+      </div>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-dot dot-gold">①</div>
+        <div class="step-title">Object <span style="font-weight:400;font-size:12px;color:var(--ink-muted)">오브젝트</span>（開到 22:00）</div>
+        <div class="step-body"><p>韓國設計選物，文具、生活雜貨，今晚感受氣氛即可。</p></div>
+      </div>
+      <div class="step">
+        <div class="step-dot dot-gold">②</div>
+        <div class="step-title">Butter / ARTBOX（開到 22:00）</div>
+        <div class="step-body"><p>同類型雜貨，在 Object 附近，順路看看。</p></div>
+      </div>
+      <div class="step">
+        <div class="step-dot dot-gold">③</div>
+        <div class="step-title">DAISO（開到 22:00）</div>
+        <div class="step-body"><p>若需補充旅行小物（保鮮袋、掛勾等），此時最順路。</p></div>
+      </div>
+    </div>
+    <div class="alert note">
+      <span class="alert-icon">ℹ</span>
+      今晚只是開胃前菜，Day 5 還會再來做完整採買，今晚輕鬆逛就好，不需要什麼都買。
+    </div>
+  </div>
+
+  <!-- 09 宵夜 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">09</span>
+      <span class="section-title">宵夜：西面布帳馬車</span>
+      <span class="section-time">22:00–23:00</span>
+    </div>
+    <div class="info-card accent">
+      <div class="info-row">
+        <span class="info-label">怎麼找</span>
+        <span class="info-val">西面站 <strong>7 號出口</strong>出站，往樂天免稅店方向走，就會看到一整排紅色帆布帳篷的布帳馬車。也可搜尋 Naver Map <span class="ko">서면 포장마차</span>。</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">開攤時間</span>
+        <span class="info-val">黃昏後陸續開攤，<strong>20:00–22:00 最熱鬧</strong>，深夜仍有攤位在。</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">付款</span>
+        <span class="info-val">絕大多數攤位<strong>只收現金</strong>，帶 ₩20,000–30,000 現金出門。</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">座位</span>
+        <span class="info-val">辣炒年糕街的小攤通常<strong>無座位，站著吃</strong>。有紅帳篷的布帳馬車才有矮桌椅可入座，看到空位直接坐下即可，老闆會過來點餐。</span>
+      </div>
+    </div>
+
+    <div class="menu-box">
+      <div class="menu-header">宵夜必點（食量小→兩樣就夠）</div>
+      <div class="menu-body">
+        <div class="menu-item">
+          <span>辣炒年糕 <span class="ko">떡볶이</span></span>
+          <span class="menu-note">兩人分一份，年糕＋魚板一起煮</span>
+        </div>
+        <div class="menu-item">
+          <span>黑糖餅 <span class="ko">호떡</span></span>
+          <span class="menu-note">現做熱的最好吃，分食一個</span>
+        </div>
+        <div class="menu-item">
+          <span>魚板湯 <span class="ko">어묵탕</span></span>
+          <span class="menu-note">站著吃的攤位通常免費附湯，可以續</span>
+        </div>
+        <div class="menu-item">
+          <span>炸餃子 / 炸蔬菜 <span class="ko">튀김</span></span>
+          <span class="menu-note">可選，單點一兩樣嘗鮮</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert note">
+      <span class="alert-icon">ℹ</span>
+      <strong>點餐方式</strong>：有紅帳篷的攤位直接找空位坐，老闆會來問。站著吃的小攤則直接看看板指著說要哪個，或用手機翻譯 App 輔助，老闆通常懂幾句簡單英文，比手畫腳也能通。
+    </div>
+    <div class="alert warn">
+      <span class="alert-icon">⚠</span>
+      部分攤位針對觀光客定價略高，建議選<strong>旁邊有韓國人在吃的攤位</strong>，或看板上有清楚標價的。點辣炒年糕一份＋黑糖餅一個分食即可，別被老闆推薦點太多，宵夜吃到 ₩10,000–15,000 就非常足夠。
+    </div>
+
+    <div class="photo-ref">
+      <div class="photo-ref-icon">📸</div>
+      <div class="photo-ref-body">
+        <div class="photo-ref-label">布帳馬車長這樣・怎麼找・怎麼點</div>
+        <div class="photo-ref-desc">紅色帆布帳篷外觀、西面一整排布帳馬車夜晚街景、辣炒年糕＋黑糖餅實拍、帳篷內矮桌椅座位</div>
+        <div class="photo-ref-links">
+          <a class="photo-link red" href="https://starseedgirl.com/%E3%80%8A%E5%B8%83%E5%B8%B3%E9%A6%AC%E8%BB%8A%E4%B8%80%E6%A2%9D%E8%A1%97%E3%80%8B%ED%8F%AC%EC%9E%A5%EB%A7%88%EC%B0%A8-%E9%87%9C%E5%B1%B1%C2%B7%E8%A5%BF%E9%9D%A2%E7%AB%99%EF%BD%9C%E9%9F%93%E5%9C%8B/" target="_blank">→ Starseed｜西面布帳馬車實拍＋點餐過程</a>
+          <a class="photo-link amber" href="https://beri.tw/pojangmacha-busan/" target="_blank">→ 莓姬貝利｜紅帳篷內部座位＋食物照</a>
+          <a class="photo-link" href="https://feitravel.tw/blog/post/68753684" target="_blank">→ 小菲｜西面布帳馬車街景＋找到方式</a>
+          <a class="photo-link teal" href="https://helena.tw/busan-station-pojangmacha/" target="_blank">→ Helena｜布帳馬車文化介紹＋點餐說明</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10 checklist -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">10</span>
+      <span class="section-title">行前 Checklist</span>
+    </div>
+    <ul class="checklist">
+      <li><span class="check-icon">☐</span><span><strong>出發前</strong>：填寫韓國電子入境卡（e-Arrival Card），提前 3 天線上填。</span></li>
+      <li><span class="check-icon">☐</span><span><strong>交通卡</strong>：T-money、WOWpass 或 Visit Busan Pass 實體卡均可，到機場輕軌站儲值使用。</span></li>
+      <li><span class="check-icon">☐</span><span><strong>Visit Busan Pass</strong>：Gate 2 旁旅遊諮詢處領取（10:00–17:00，午休 12:00–13:00）。班機 15:30 落地時間剛好，不要拖太久。若過了 17:00 則第二天補領。</span></li>
+      <li><span class="check-icon">☐</span><span><strong>換錢</strong>：機場輕軌站內 Money Box（黃色招牌），人工窗口 06:00–21:00，門口有 24h 自助機。換 ₩5–8 萬韓幣即可。</span></li>
+      <li><span class="check-icon">☐</span><span><strong>沙上換乘</strong>：輕軌出站後步行 6–7 分鐘到地鐵站，行李多請多留時間，跟著綠色指標走，找電梯再進站。</span></li>
+      <li><span class="check-icon">☐</span><span><strong>飯店確認</strong>：抵達後確認 Urbanstay Seomyeon 在 ZIM CARRY 合作名單，於 KKday 預訂 Day 3 行李宅配。</span></li>
+      <li><span class="check-icon">☐</span><span><strong>宵夜現金</strong>：布帳馬車多為現金，帶 ₩20,000–30,000 出門。</span></li>
+      <li><span class="check-icon">☐</span><span><strong>Naver Map</strong>：出地鐵站後用 Naver Map 導航飯店，比 Google Map 在釜山更精準。</span></li>
+    </ul>
+  </div>
+
+  <!-- 頁尾 -->
+  <div style="text-align:center;padding-top:28px;border-top:1px solid var(--paper-border);font-family:'DM Mono',monospace;font-size:10px;color:var(--ink-muted);letter-spacing:0.08em;">
+    DAY 1 OF 5 · BUSAN · SEOMYEON
+  </div>
+
+</div>
+</body>
+</html>

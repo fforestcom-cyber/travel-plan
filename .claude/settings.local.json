@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(npm start:*)",
+      "Bash(ipconfig)",
+      "Bash(sed -i '101s/fontSize: 11/fontSize: 13/' src/components/layout/DayPlanView.tsx)",
+      "Bash(sed -i '115s/fontSize: 11/fontSize: 13/' src/components/layout/DayPlanView.tsx)",
+      "Bash(sed -i '169s/fontSize: 11/fontSize: 13/' src/components/layout/DayPlanView.tsx)",
+      "Bash(sed -i '186s/fontSize: 11/fontSize: 13/' src/components/layout/DayPlanView.tsx)",
+      "Bash(sed -i '371s/fontSize: 13/fontSize: 15/' src/components/layout/DayPlanView.tsx)",
+      "Bash(sed -i '375s/fontSize: 11/fontSize: 13/' src/components/layout/DayPlanView.tsx)",
+      "Bash(sed -i '483s/fontSize: 13/fontSize: 15/' src/components/layout/DayPlanView.tsx)",
+      "Bash(sed -i '487s/fontSize: 11/fontSize: 13/' src/components/layout/DayPlanView.tsx)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}

@@ -427,13 +427,16 @@ svg {
    行程頁：天氣資訊卡
    ========================================================================== */
 .weather-card {
-  background: var(--color-bg-card);
-  border: 2px solid var(--color-border);
-  border-radius: var(--radius-xl);
-  padding: 1rem 1.25rem 0.875rem;
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 0;
+  margin-left: -1.5rem;
+  margin-right: -1.5rem;
+  padding: 1rem 1.5rem 0.875rem;
   margin-bottom: 1.5rem;
   position: relative;
-  overflow: hidden;
   transition: border-color 0.25s;
 }
 

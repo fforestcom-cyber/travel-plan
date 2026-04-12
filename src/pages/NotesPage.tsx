@@ -1,142 +1,65 @@
-import { useState, useEffect, useRef } from 'react';
-import {
-  collection, addDoc, deleteDoc, doc,
-  onSnapshot, query, orderBy, serverTimestamp, Timestamp,
-} from 'firebase/firestore';
-import { db } from '../lib/firebase';
-import { uploadImage } from '../lib/storage';
+import { useState } from 'react';
 import { TRIP_INFO } from '../data/mockData';
 
-/* ── Types ─────────────────────────────────────────────── */
-type DotColor = 'yellow' | 'green' | 'blue';
-
-interface Note {
-  id: string;
-  text: string;
-  imageUrl: string;
-  dotColor: DotColor;
-  createdAt: Timestamp | null;
+/* ── Day 1 行前 Checklist（section 10） ──────────────────────────────── */
+interface CheckItem {
+  key: string;
+  label: string;
+  desc: string;
 }
 
-/* ── Helpers ────────────────────────────────────────────── */
-const DOT_COLORS: DotColor[] = ['yellow', 'green', 'blue'];
+const DAY1_CHECKLIST: CheckItem[] = [
+  {
+    key:   'arrival-card',
+    label: '出發前',
+    desc:  '填寫韓國電子入境卡（e-Arrival Card），提前 3 天線上填。',
+  },
+  {
+    key:   'transit-card',
+    label: '交通卡',
+    desc:  'T-money、WOWpass 或 Visit Busan Pass 實體卡均可，到機場輕軌站儲值使用。',
+  },
+  {
+    key:   'busan-pass',
+    label: 'Visit Busan Pass',
+    desc:  'Gate 2 旁旅遊諮詢處領取（10:00–17:00，午休 12:00–13:00）。班機 15:30 落地時間剛好，不要拖太久。若過了 17:00 則第二天補領。',
+  },
+  {
+    key:   'exchange',
+    label: '換錢',
+    desc:  '機場輕軌站內 Money Box（黃色招牌），人工窗口 06:00–21:00，門口有 24h 自助機。換 ₩5–8 萬韓幣即可。',
+  },
+  {
+    key:   'transfer',
+    label: '沙上換乘',
+    desc:  '輕軌出站後步行 6–7 分鐘到地鐵站，行李多請多留時間，跟著綠色指標走，找電梯再進站。',
+  },
+  {
+    key:   'hotel',
+    label: '飯店確認',
+    desc:  '抵達後確認 Urbanstay Seomyeon 在 ZIM CARRY 合作名單，於 KKday 預訂 Day 3 行李宅配至海雲台飯店。',
+  },
+  {
+    key:   'cash',
+    label: '宵夜現金',
+    desc:  '布帳馬車多為現金，帶 ₩20,000–30,000 出門。',
+  },
+  {
+    key:   'naver',
+    label: 'Naver Map',
+    desc:  '出地鐵站後用 Naver Map 導航飯店，比 Google Map 在釜山更精準。',
+  },
+];
 
-const formatTs = (ts: Timestamp | null): string => {
-  if (!ts) return '';
-  const d = ts.toDate();
-  const m = d.getMonth() + 1;
-  const day = d.getDate();
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mm = String(d.getMinutes()).padStart(2, '0');
-  return `${m}月${day}日 ${hh}:${mm}`;
-};
-
-const NOTES_COL = collection(db, 'notes');
-
-/* ── NotesPage ──────────────────────────────────────────── */
+/* ── NotesPage（備註） ──────────────────────────────────────────────── */
 const NotesPage = () => {
-  const [notes, setNotes]         = useState<Note[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [draft, setDraft]         = useState('');
-  const [pendingImg, setPendingImg] = useState<string>('');   // preview URL
-  const [pendingFile, setPendingFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [adding, setAdding]       = useState(false);
-  const fileInputRef              = useRef<HTMLInputElement>(null);
-  const colorIdx                  = useRef(0);
+  const [checked, setChecked] = useState<Record<string, boolean>>({});
 
-  /* ── 即時監聽 Firestore ── */
-  useEffect(() => {
-    const q = query(NOTES_COL, orderBy('createdAt', 'desc'));
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        setNotes(
-          snap.docs.map((d) => {
-            const data = d.data();
-            return {
-              id:        d.id,
-              text:      data.text      ?? '',
-              imageUrl:  data.imageUrl  ?? '',
-              dotColor:  data.dotColor  ?? 'blue',
-              createdAt: data.createdAt ?? null,
-            };
-          })
-        );
-        setLoading(false);
-      },
-      (err) => {
-        console.error('notes onSnapshot error:', err);
-        setLoading(false);
-      }
-    );
-    return () => unsub();
-  }, []);
+  const toggle = (key: string) =>
+    setChecked(prev => ({ ...prev, [key]: !prev[key] }));
 
-  /* ── 選擇圖片（暫存，不立即上傳） ── */
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setPendingFile(file);
-    setPendingImg(URL.createObjectURL(file));
-  };
+  const doneCount = DAY1_CHECKLIST.filter(item => checked[item.key]).length;
 
-  /* ── 新增 note ── */
-  const addNote = async () => {
-    const text = draft.trim();
-    if (!text || adding) return;
-
-    setAdding(true);
-    try {
-      let imageUrl = '';
-
-      // 若有待上傳圖片，先上傳 Cloudinary
-      if (pendingFile) {
-        setUploading(true);
-        const result = await uploadImage(pendingFile, 'korea-travel/notes');
-        imageUrl = result.url;
-        setUploading(false);
-      }
-
-      const dotColor = DOT_COLORS[colorIdx.current % DOT_COLORS.length];
-      colorIdx.current += 1;
-
-      await addDoc(NOTES_COL, {
-        text,
-        imageUrl,
-        dotColor,
-        createdAt: serverTimestamp(),
-      });
-
-      setDraft('');
-      setPendingImg('');
-      setPendingFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    } catch (err) {
-      console.error('addNote error:', err);
-      setUploading(false);
-    } finally {
-      setAdding(false);
-    }
-  };
-
-  /* ── 刪除 note ── */
-  const deleteNote = async (id: string) => {
-    try {
-      await deleteDoc(doc(db, 'notes', id));
-    } catch (err) {
-      console.error('deleteNote error:', err);
-    }
-  };
-
-  /* ── 清除待上傳圖片 ── */
-  const clearPendingImg = () => {
-    setPendingImg('');
-    setPendingFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  /* ── Render ── */
   return (
     <>
       <div className="page-trip-header">
@@ -154,115 +77,114 @@ const NotesPage = () => {
 
       <div className="section-px">
 
-        {/* 新增表單 */}
-        <div className="note-compose mb-6">
-          <textarea
-            placeholder="有什麼想記下來的嗎？行前提醒、購物清單、突發事項…"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-          />
-
-          {/* 圖片預覽 */}
-          {pendingImg && (
-            <div style={{ position: 'relative', marginBottom: 10 }}>
-              <img
-                src={pendingImg}
-                alt="預覽"
-                style={{ width: '100%', borderRadius: 'var(--radius-md)', maxHeight: 140, objectFit: 'cover' }}
-              />
-              <button
-                onClick={clearPendingImg}
-                style={{
-                  position: 'absolute', top: 6, right: 6,
-                  background: 'rgba(0,0,0,.5)', color: 'white',
-                  border: 'none', borderRadius: '50%',
-                  width: 24, height: 24, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 14, lineHeight: 1,
-                }}
-                aria-label="移除圖片"
-              >×</button>
-            </div>
-          )}
-
-          <div className="note-compose__actions">
-            {/* 隱藏的 file input */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              style={{ display: 'none' }}
-              onChange={handleFileChange}
-            />
-            <button
-              className="btn btn--primary-light"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-            >
-              <svg viewBox="0 0 24 24" style={{ width: 15, height: 15 }}>
-                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
-                <circle cx="12" cy="13" r="3" />
-              </svg>
-              {pendingImg ? '已選擇' : '上傳圖片'}
-            </button>
-            <button
-              className="btn btn--dark"
-              onClick={addNote}
-              disabled={adding || !draft.trim()}
-            >
-              {adding ? (
-                uploading ? '上傳中…' : '新增中…'
-              ) : (
-                <>
-                  <svg viewBox="0 0 24 24" style={{ width: 14, height: 14 }}>
-                    <line x1="12" y1="5" x2="12" y2="19" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                  </svg>
-                  新增
-                </>
-              )}
-            </button>
+        {/* 標題列 */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <svg viewBox="0 0 24 24" style={{ width: 16, height: 16, color: 'var(--color-primary)' }}
+              fill="none" stroke="currentColor" strokeWidth={2}>
+              <path d="M9 11l3 3L22 4" />
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+            </svg>
+            <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-main)' }}>
+              Day 1 行前 Checklist
+            </span>
           </div>
+          <span style={{
+            fontSize: 11,
+            color: doneCount === DAY1_CHECKLIST.length ? 'var(--color-primary)' : 'var(--color-text-light)',
+            fontWeight: 600,
+          }}>
+            {doneCount} / {DAY1_CHECKLIST.length}
+          </span>
         </div>
 
-        {/* Loading */}
-        {loading && (
-          <div style={{ textAlign: 'center', padding: '2rem 0', color: 'var(--color-text-light)', fontSize: 'var(--text-sm)' }}>
-            讀取中…
-          </div>
-        )}
+        {/* 進度條 */}
+        <div style={{
+          height: 4,
+          background: 'var(--color-bg-chip, #f0f0f0)',
+          borderRadius: 4,
+          marginBottom: 20,
+          overflow: 'hidden',
+        }}>
+          <div style={{
+            height: '100%',
+            width: `${(doneCount / DAY1_CHECKLIST.length) * 100}%`,
+            background: 'var(--color-primary)',
+            borderRadius: 4,
+            transition: 'width 0.3s ease',
+          }} />
+        </div>
 
-        {/* 備註列表 */}
-        {!loading && notes.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '2rem 0', color: 'var(--color-text-light)', fontSize: 'var(--text-sm)' }}>
-            還沒有備註，新增第一筆吧！
-          </div>
-        )}
-
-        {notes.map((note) => (
-          <div key={note.id} className="note-card">
-            <div className="note-card__body">
-              <p className="note-card__date">
-                <span className={`note-dot note-dot--${note.dotColor}`} />
-                {formatTs(note.createdAt)}
-              </p>
-              <p className="note-card__text">{note.text}</p>
-              {note.imageUrl && (
-                <img src={note.imageUrl} alt="備註附圖" className="note-card__img" />
-              )}
-            </div>
+        {/* Checklist */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {DAY1_CHECKLIST.map(item => (
             <button
-              className="note-card__delete"
-              onClick={() => deleteNote(note.id)}
-              aria-label="刪除備註"
+              key={item.key}
+              onClick={() => toggle(item.key)}
+              style={{
+                display: 'flex',
+                gap: 12,
+                alignItems: 'flex-start',
+                padding: '12px 14px',
+                background: checked[item.key]
+                  ? 'var(--color-primary-pale, #fff5f5)'
+                  : 'var(--color-bg-card, #fff)',
+                border: '1px solid',
+                borderColor: checked[item.key]
+                  ? 'var(--color-primary-light, #fecaca)'
+                  : 'var(--color-border, #e5e7eb)',
+                borderRadius: 12,
+                textAlign: 'left',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+              }}
             >
-              <svg viewBox="0 0 24 24" style={{ width: 16, height: 16 }}>
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-              </svg>
+              {/* checkbox 圓圈 */}
+              <span style={{
+                width: 20,
+                height: 20,
+                borderRadius: '50%',
+                border: checked[item.key]
+                  ? '2px solid var(--color-primary)'
+                  : '2px solid var(--color-border, #d1d5db)',
+                background: checked[item.key] ? 'var(--color-primary)' : 'transparent',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                marginTop: 1,
+                transition: 'all 0.15s',
+              }}>
+                {checked[item.key] && (
+                  <svg viewBox="0 0 24 24" style={{ width: 11, height: 11, color: 'white' }}
+                    fill="none" stroke="currentColor" strokeWidth={3}>
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                )}
+              </span>
+
+              {/* 文字 */}
+              <div style={{ flex: 1 }}>
+                <span style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: checked[item.key] ? 'var(--color-text-light)' : 'var(--color-text-main)',
+                  textDecoration: checked[item.key] ? 'line-through' : 'none',
+                  marginRight: 6,
+                }}>
+                  {item.label}
+                </span>
+                <span style={{
+                  fontSize: 12,
+                  color: 'var(--color-text-light)',
+                  lineHeight: 1.6,
+                }}>
+                  {item.desc}
+                </span>
+              </div>
             </button>
-          </div>
-        ))}
+          ))}
+        </div>
 
       </div>
     </>
