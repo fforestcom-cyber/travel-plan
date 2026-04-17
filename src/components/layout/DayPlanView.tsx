@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   collection, addDoc, deleteDoc, doc, setDoc,
   onSnapshot, query, serverTimestamp, Timestamp, where,
@@ -28,6 +28,7 @@ const CATEGORY_STYLE: Record<string, { bg: string; color: string }> = {
   住宿: { bg: 'rgba(158,171,150,0.18)', color: '#3a6a4a' },
   購物: { bg: 'rgba(176,152,152,0.18)', color: '#6a3a3a' },
   航班: { bg: 'rgba(140,157,170,0.18)', color: '#3a4a6a' },
+  路程: { bg: 'rgba(168,156,140,0.18)', color: '#5a4a3a' },
 };
 
 const markBold = (text: string): React.ReactNode[] => {
@@ -54,14 +55,6 @@ const TRANSPORT_LINKS = [
 ];
 
 // ── 號碼標籤 ──────────────────────────────────────────────────────────
-const NumLabel = ({ num }: { num: string }) => (
-  <span style={{
-    fontSize: 15, fontWeight: 700, color: 'rgb(55,65,81)',
-    fontFamily: 'monospace', flexShrink: 0, minWidth: 24,
-  }}>
-    {num}
-  </span>
-);
 
 // ── 步驟圓點 ──────────────────────────────────────────────────────────
 const StepItem = ({ step, idx }: { step: Step; idx: number }) => {
@@ -232,7 +225,9 @@ interface CardOverride {
   timeRange?: string;
   openHours?: string;
   transportTime?: string;
-  address?: string;
+  address?: string;       // legacy
+  naverQuery?: string;
+  googleQuery?: string;
   content?: string;
   notes?: string;
   links?: RefLink[];
@@ -240,7 +235,8 @@ interface CardOverride {
 }
 interface CustomCard {
   id: string; dayNum: number; title: string; timeRange: string;
-  notes: string; order: number;
+  notes: string; order: number; category?: string;
+  naverQuery?: string; googleQuery?: string;
 }
 
 // ── 照片上傳 ──────────────────────────────────────────────────────────
@@ -329,7 +325,8 @@ const SectionPhotoGallery = ({ sectionId }: { sectionId: string }) => {
 // ── 從靜態資料轉換為初始 fields ─────────────────────────────────────
 interface EditFields {
   category: string; name: string; timeRange: string;
-  openHours: string; transportTime: string; address: string;
+  openHours: string; transportTime: string;
+  naverQuery: string; googleQuery: string;
   content: string; notes: string; links: RefLink[];
 }
 
@@ -378,7 +375,8 @@ const sectionToInitFields = (section: DaySection): EditFields => {
     timeRange: timePart.trim(),
     openHours: '',
     transportTime: transportPart.trim(),
-    address: section.mapQuery ?? '',
+    naverQuery: section.mapQuery ?? '',
+    googleQuery: '',
     content: contentParts.join('\n'),
     notes: noteParts.join('\n'),
     links,
@@ -388,7 +386,7 @@ const sectionToInitFields = (section: DaySection): EditFields => {
 const overrideToFields = (ov: CardOverride, section?: DaySection): EditFields => {
   const base = section ? sectionToInitFields(section) : {
     category: '', name: '', timeRange: '', openHours: '',
-    transportTime: '', address: '', content: '', notes: '', links: [] as RefLink[],
+    transportTime: '', naverQuery: '', googleQuery: '', content: '', notes: '', links: [] as RefLink[],
   };
   return {
     category:      ov.category      ?? base.category,
@@ -396,7 +394,8 @@ const overrideToFields = (ov: CardOverride, section?: DaySection): EditFields =>
     timeRange:     ov.timeRange     ?? base.timeRange,
     openHours:     ov.openHours     ?? base.openHours,
     transportTime: ov.transportTime ?? base.transportTime,
-    address:       ov.address       ?? base.address,
+    naverQuery:    ov.naverQuery    ?? ov.address ?? base.naverQuery,
+    googleQuery:   ov.googleQuery   ?? base.googleQuery,
     content:       ov.content       ?? base.content,
     notes:         ov.notes         ?? base.notes,
     links:         ov.links         ?? base.links,
@@ -416,9 +415,24 @@ const EditPanel = ({
   const [fields,  setFields]  = useState<EditFields>(initFields);
   const [saving,  setSaving]  = useState(false);
   const [newLink, setNewLink] = useState<RefLink>({ text: '', href: '' });
+  const contentRef = useRef<HTMLTextAreaElement>(null);
 
   const set = <K extends keyof EditFields>(k: K, v: EditFields[K]) =>
     setFields(f => ({ ...f, [k]: v }));
+
+  const insertNumberTag = (n: number) => {
+    const el = contentRef.current;
+    const insert = `${n}. `;
+    if (!el) { set('content', fields.content + insert); return; }
+    const start = el.selectionStart;
+    const end   = el.selectionEnd;
+    const next  = fields.content.slice(0, start) + insert + fields.content.slice(end);
+    set('content', next);
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(start + insert.length, start + insert.length);
+    });
+  };
 
   const addLink = () => {
     if (!newLink.text.trim() && !newLink.href.trim()) return;
@@ -447,9 +461,8 @@ const EditPanel = ({
 
   return (
     <div style={{
-      padding: '14px 16px 16px',
-      borderTop: `1px solid ${MORANDI_LINE}`,
-      background: '#faf8f4',
+      padding: '14px 18px 16px',
+      background: '#fff',
       display: 'flex', flexDirection: 'column', gap: 10,
     }}>
 
@@ -462,7 +475,7 @@ const EditPanel = ({
           style={{ ...iStyle, color: fields.category ? '#374151' : '#9ca3af' }}
         >
           <option value="">未分類</option>
-          {['景點', '美食', '住宿', '購物', '航班'].map(c => (
+          {['景點', '美食', '住宿', '購物', '航班', '路程'].map(c => (
             <option key={c} value={c}>{c}</option>
           ))}
         </select>
@@ -495,17 +508,63 @@ const EditPanel = ({
           placeholder="車程 7 分鐘" style={iStyle} />
       </div>
 
-      {/* 地址 */}
+      {/* Naver Map 搜尋 */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        {label('地址')}
-        <input value={fields.address} onChange={e => set('address', e.target.value)}
-          placeholder="Naver / Google Map 搜尋關鍵字或地址" style={iStyle} />
+        {label('Naver Map 搜尋')}
+        <input value={fields.naverQuery} onChange={e => set('naverQuery', e.target.value)}
+          placeholder="Naver 地名或地址" style={iStyle} />
+        {fields.naverQuery.trim() && (
+          <a href={`https://map.naver.com/p/search/${encodeURIComponent(fields.naverQuery)}`}
+            target="_blank" rel="noopener noreferrer"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px',
+              borderRadius: 20, background: '#e8f5e9', color: '#1a7340',
+              fontSize: 11, fontWeight: 600, textDecoration: 'none', alignSelf: 'flex-start' }}>
+            Naver Map ↗
+          </a>
+        )}
+      </div>
+
+      {/* Google Map 搜尋 */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {label('Google Map 搜尋')}
+        <input value={fields.googleQuery} onChange={e => set('googleQuery', e.target.value)}
+          placeholder="Google 地名或地址" style={iStyle} />
+        {fields.googleQuery.trim() && (
+          <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fields.googleQuery)}`}
+            target="_blank" rel="noopener noreferrer"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px',
+              borderRadius: 20, background: '#e8f0fe', color: '#1a56db',
+              fontSize: 11, fontWeight: 600, textDecoration: 'none', alignSelf: 'flex-start' }}>
+            Google Map ↗
+          </a>
+        )}
       </div>
 
       {/* 內容 */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        {label('內容')}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          {label('內容')}
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            {[1, 2, 3, 4].map((n, idx) => (
+              <React.Fragment key={n}>
+                {idx > 0 && <div style={{ width: 10, height: 1.5, background: MORANDI_LINE, flexShrink: 0 }} />}
+                <button
+                  type="button"
+                  onClick={() => insertNumberTag(n)}
+                  style={{
+                    width: 22, height: 22, borderRadius: '50%',
+                    background: MORANDI_DOTS[(n - 1) % MORANDI_DOTS.length],
+                    color: '#fff', border: 'none', fontSize: 11, fontWeight: 600,
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >{n}</button>
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
         <textarea
+          ref={contentRef}
           value={fields.content}
           onChange={e => set('content', e.target.value)}
           rows={6}
@@ -606,7 +665,7 @@ const EditPanel = ({
 // ── 覆蓋資料顯示 ──────────────────────────────────────────────────────
 const OverrideDisplay = ({ ov, isChecklist = false }: { ov: CardOverride; isChecklist?: boolean }) => (
   <div>
-    {(ov.openHours || ov.transportTime || ov.address) && (
+    {(ov.openHours || ov.transportTime || ov.naverQuery || ov.address || ov.googleQuery) && (
       <div style={{ marginBottom: 14 }}>
         {ov.openHours && (
           <div>
@@ -620,10 +679,16 @@ const OverrideDisplay = ({ ov, isChecklist = false }: { ov: CardOverride; isChec
             <p style={{ fontSize: 14, color: '#374151', lineHeight: 1.7, margin: '0 0 8px' }}>{ov.transportTime}</p>
           </div>
         )}
-        {ov.address && (
+        {(ov.naverQuery || ov.address) && (
           <div>
-            <span className="badge badge--primary" style={{ display: 'inline-block', marginBottom: 4 }}>地址</span>
-            <p style={{ fontSize: 14, color: '#374151', lineHeight: 1.7, margin: 0 }}>{ov.address}</p>
+            <span className="badge badge--primary" style={{ display: 'inline-block', marginBottom: 4 }}>Naver 搜尋</span>
+            <p style={{ fontSize: 14, color: '#374151', lineHeight: 1.7, margin: '0 0 8px' }}>{ov.naverQuery || ov.address}</p>
+          </div>
+        )}
+        {ov.googleQuery && (
+          <div>
+            <span className="badge badge--primary" style={{ display: 'inline-block', marginBottom: 4 }}>Google 搜尋</span>
+            <p style={{ fontSize: 14, color: '#374151', lineHeight: 1.7, margin: 0 }}>{ov.googleQuery}</p>
           </div>
         )}
       </div>
@@ -631,42 +696,58 @@ const OverrideDisplay = ({ ov, isChecklist = false }: { ov: CardOverride; isChec
 
     {ov.content && (
       <div style={{ marginBottom: 12 }}>
-        {isChecklist ? (
-          // ☐ Checklist 格式
-          ov.content.split('\n').filter(l => l.trim()).map((line, i) => (
-            <div key={i}>
-              {i > 0 && <div style={{ height: 1, background: MORANDI_LINE, margin: '5px 0' }} />}
-              <div style={{ display: 'flex', gap: 8, fontSize: 14, color: '#374151', lineHeight: 1.7 }}>
-                <span style={{ color: '#9ca3af', flexShrink: 0 }}>☐</span>
-                <span>{markBold(line)}</span>
-              </div>
-            </div>
-          ))
-        ) : (
-          // 1-2-3 數字圓點格式
-          ov.content.split('\n').map((line, i) => {
-            const m = /^(\d+)\.\s+(.+)/.exec(line);
+        {(() => {
+          // 彩色圓點時間軸格式（1. xxx 開頭 → numbered；其餘 → plain text）
+          const NUMBERED_RE = /^(\d+)\.\s+(.+)/;
+          type Group =
+            | { type: 'numbered'; num: number; text: string; tails: string[]; key: number }
+            | { type: 'other';   text: string; key: number };
+          const groups: Group[] = [];
+          let cur: Extract<Group, { type: 'numbered' }> | null = null;
+          ov.content!.split('\n').forEach((line, i) => {
+            const m = NUMBERED_RE.exec(line);
             if (m) {
-              const n = parseInt(m[1]);
-              return (
-                <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+              if (cur) groups.push(cur);
+              cur = { type: 'numbered', num: parseInt(m[1]), text: m[2].trim(), tails: [], key: i };
+            } else if (cur) {
+              cur.tails.push(line);
+            } else {
+              groups.push({ type: 'other', text: line, key: i });
+            }
+          });
+          if (cur) groups.push(cur);
+          const lastNumIdx = groups.reduce((last, g, i) => g.type === 'numbered' ? i : last, -1);
+
+          return groups.map((g, gi) => {
+            if (g.type === 'other') {
+              return g.text.trim()
+                ? <p key={g.key} style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.7, marginLeft: 32, marginBottom: 3 }}>{markBold(g.text)}</p>
+                : <div key={g.key} style={{ height: 4 }} />;
+            }
+            const hasNext = gi < lastNumIdx;
+            return (
+              <div key={g.key} style={{ display: 'flex', gap: 10 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <div style={{
                     width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
-                    background: MORANDI_DOTS[(n - 1) % MORANDI_DOTS.length],
+                    background: MORANDI_DOTS[(g.num - 1) % MORANDI_DOTS.length],
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#fff', fontSize: 11, fontWeight: 600, marginTop: 2,
-                  }}>{n}</div>
-                  <p style={{ fontSize: 14, color: '#374151', lineHeight: 1.6, margin: 0, paddingTop: 2 }}>
-                    {markBold(m[2])}
-                  </p>
+                    color: '#fff', fontSize: 11, fontWeight: 600,
+                  }}>{g.num}</div>
+                  {hasNext && <div style={{ width: 1, flex: 1, minHeight: 14, background: MORANDI_LINE, marginTop: 4 }} />}
                 </div>
-              );
-            }
-            return line.trim()
-              ? <p key={i} style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.7, marginLeft: 32, marginBottom: 3 }}>{markBold(line)}</p>
-              : <div key={i} style={{ height: 4 }} />;
-          })
-        )}
+                <div style={{ flex: 1, paddingBottom: hasNext ? 12 : 8, paddingTop: 2 }}>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: '#374151', lineHeight: 1.6, margin: 0 }}>{markBold(g.text)}</p>
+                  {g.tails.map((t, j) =>
+                    t.trim()
+                      ? <p key={j} style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.7, marginBottom: 3 }}>{markBold(t)}</p>
+                      : <div key={j} style={{ height: 4 }} />
+                  )}
+                </div>
+              </div>
+            );
+          });
+        })()}
       </div>
     )}
 
@@ -705,144 +786,75 @@ const OverrideDisplay = ({ ov, isChecklist = false }: { ov: CardOverride; isChec
   </div>
 );
 
-// ── 地圖 + 編輯 Action Bar ─────────────────────────────────────────────
+// ── 展開 Action Bar ───────────────────────────────────────────────────
 const ActionBar = ({
-  mapQuery,
-  editing,
-  onToggleEdit,
+  isOpen,
+  onToggle,
 }: {
-  mapQuery?: string;
-  editing: boolean;
-  onToggleEdit: () => void;
+  isOpen: boolean;
+  onToggle: () => void;
 }) => (
   <div style={{
-    display: 'flex', alignItems: 'center', gap: 6,
-    padding: '6px 12px',
-    borderTop: '1px solid #f0ebe5',
-    background: '#fdfaf7',
+    display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+    padding: '0 12px 4px',
+    background: '#fff',
   }}>
-    <div style={{ flex: 1 }} />
-    {mapQuery && (
-      <>
-        <a
-          href={`https://map.naver.com/p/search/${encodeURIComponent(mapQuery)}`}
-          target="_blank" rel="noopener noreferrer"
-          style={{
-            display: 'flex', alignItems: 'center', gap: 4,
-            padding: '4px 10px', borderRadius: 20,
-            background: '#e8f5e9', color: '#1a7340',
-            fontSize: 11, fontWeight: 600, textDecoration: 'none',
-          }}
-        >
-          <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth={2.5}>
-            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-          </svg>
-          Naver Map
-        </a>
-        <a
-          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`}
-          target="_blank" rel="noopener noreferrer"
-          style={{
-            display: 'flex', alignItems: 'center', gap: 4,
-            padding: '4px 10px', borderRadius: 20,
-            background: '#e8f0fe', color: '#1a56db',
-            fontSize: 11, fontWeight: 600, textDecoration: 'none',
-          }}
-        >
-          <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth={2.5}>
-            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-          </svg>
-          Google Map
-        </a>
-      </>
-    )}
     <button
-      onClick={onToggleEdit}
+      onClick={onToggle}
       style={{
         display: 'flex', alignItems: 'center', gap: 4,
         padding: '4px 10px', borderRadius: 20,
-        background: editing ? 'rgba(125,155,170,0.15)' : 'none',
-        border: editing ? '1px solid rgba(125,155,170,0.3)' : '1px solid #ece8e3',
-        color: editing ? '#4a7a8a' : '#9ca3af',
-        fontSize: 11, fontWeight: 600, cursor: 'pointer',
+        background: 'none', border: '1px solid #ece8e3',
+        color: '#9ca3af', fontSize: 11, fontWeight: 600, cursor: 'pointer',
       }}
     >
-      <svg viewBox="0 0 24 24" style={{ width: 11, height: 11 }} fill="none" stroke="currentColor" strokeWidth={2}>
-        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+      <svg viewBox="0 0 24 24" style={{
+        width: 13, height: 13,
+        transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s',
+      }} fill="none" stroke="currentColor" strokeWidth={2}>
+        <polyline points="6 9 12 15 18 9" />
       </svg>
-      編輯
     </button>
   </div>
 );
 
 // ── 新增卡片 Modal ────────────────────────────────────────────────────
 const AddCardModal = ({ dayNum, nextOrder, onClose }: { dayNum: number; nextOrder: number; onClose: () => void; }) => {
-  const [title, setTitle]   = useState('');
-  const [time,  setTime]    = useState('');
-  const [notes, setNotes]   = useState('');
-  const [saving, setSaving] = useState(false);
-
-  const add = async () => {
-    if (!title.trim()) return;
-    setSaving(true);
-    try {
-      await addDoc(CUSTOM_CARDS_COL, {
-        dayNum, title, timeRange: time, notes,
-        order: nextOrder, createdAt: serverTimestamp(),
-      });
-      onClose();
-    } catch (e) { console.error(e); setSaving(false); }
+  const initFields: EditFields = {
+    category: '', name: '', timeRange: '',
+    openHours: '', transportTime: '',
+    naverQuery: '', googleQuery: '',
+    content: '', notes: '', links: [],
   };
 
-  const iStyle: React.CSSProperties = {
-    border: '1px solid #ece8e3', borderRadius: 6,
-    padding: '7px 10px', fontSize: 14, outline: 'none',
-    width: '100%', boxSizing: 'border-box',
+  const handleSave = async (fields: EditFields) => {
+    await addDoc(CUSTOM_CARDS_COL, {
+      dayNum,
+      title:       fields.name,
+      timeRange:   fields.timeRange,
+      category:    fields.category,
+      naverQuery:  fields.naverQuery,
+      googleQuery: fields.googleQuery,
+      notes:       fields.content || fields.notes,
+      order:       nextOrder,
+      createdAt:   serverTimestamp(),
+    });
   };
 
   return (
     <div
-      style={{
-        position: 'fixed', inset: 0, zIndex: 1000,
-        background: 'rgba(0,0,0,.4)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px',
-      }}
+      style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}
       onClick={onClose}
     >
       <div
-        style={{
-          background: '#fff', borderRadius: 12, padding: '20px 18px',
-          width: '100%', maxWidth: 420,
-          display: 'flex', flexDirection: 'column', gap: 12,
-        }}
+        style={{ background: '#fff', borderRadius: 12, width: '100%', maxWidth: 420, maxHeight: '85vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
         onClick={e => e.stopPropagation()}
       >
-        <p style={{ fontSize: 15, fontWeight: 700, color: '#374151', margin: 0 }}>新增行程卡片</p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span style={{ fontSize: 12, color: '#9ca3af' }}>標題 *</span>
-          <input value={title} onChange={e => setTitle(e.target.value)} placeholder="卡片標題" style={iStyle} />
+        <div style={{ padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f0ebe5', flexShrink: 0 }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: '#374151' }}>新增行程卡片</span>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#9ca3af', lineHeight: 1, padding: '0 4px' }}>×</button>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span style={{ fontSize: 12, color: '#9ca3af' }}>時間</span>
-          <input value={time} onChange={e => setTime(e.target.value)} placeholder="14:00–15:00" style={iStyle} />
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span style={{ fontSize: 12, color: '#9ca3af' }}>內容</span>
-          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={4}
-            placeholder="行程內容、備注…" style={{ ...iStyle, resize: 'vertical' }} />
-        </div>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
-          <button onClick={onClose} style={{
-            padding: '7px 16px', borderRadius: 6, border: '1px solid #ece8e3',
-            background: 'none', fontSize: 13, color: '#6b7280', cursor: 'pointer',
-          }}>取消</button>
-          <button onClick={add} disabled={saving || !title.trim()} style={{
-            padding: '7px 16px', borderRadius: 6, border: 'none',
-            background: '#9eab96', fontSize: 13, color: '#fff', cursor: 'pointer',
-            opacity: (saving || !title.trim()) ? 0.6 : 1,
-          }}>{saving ? '新增中…' : '新增'}</button>
-        </div>
+        <EditPanel initFields={initFields} onSave={handleSave} onClose={onClose} />
       </div>
     </div>
   );
@@ -850,16 +862,16 @@ const AddCardModal = ({ dayNum, nextOrder, onClose }: { dayNum: number; nextOrde
 
 // ── MergedTransportCard（01~05 合併） ─────────────────────────────────
 const MergedTransportCard = ({
-  sections, sectionId, override, dayNum,
+  sections, sectionId, override, dayNum, onEdit,
 }: {
   sections: DaySection[];
   sectionId: string;
   override?: CardOverride;
   dayNum: number;
+  onEdit: (ctx: { initFields: EditFields; onSave: (f: EditFields) => Promise<void> }) => void;
 }) => {
   const [open,      setOpen]      = useState(false);
   const [linksOpen, setLinksOpen] = useState(false);
-  const [editing,   setEditing]   = useState(false);
 
   const blocksWithMeta = sections.flatMap(s =>
     s.blocks.filter(b => b.kind !== 'photo-ref').map(b => ({ block: b, sectionNum: s.num, sectionTitle: s.title }))
@@ -887,44 +899,66 @@ const MergedTransportCard = ({
     : {
         category: '', name: displayTitle, timeRange,
         openHours: '', transportTime: '',
-        address: '', content: '', notes: '', links: TRANSPORT_LINKS.map(l => ({ text: l.label, href: l.href })),
+        naverQuery: '', googleQuery: '',
+        content: '', notes: '', links: TRANSPORT_LINKS.map(l => ({ text: l.label, href: l.href })),
       };
 
+  const naverQ  = override?.naverQuery || override?.address || '';
+  const googleQ = override?.googleQuery || '';
+
   return (
-    <div style={{ borderRadius: 'var(--radius-md)', border: '1px solid #ece8e3', background: '#fff', marginBottom: 10, overflow: 'hidden' }}>
+    <div style={{ border: '1px solid #ece8e3', borderRadius: 'var(--radius-md)', background: '#fff', marginBottom: 10, overflow: 'hidden' }}>
       {/* Header */}
-      <button
-        style={{
-          width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-          padding: '12px 16px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer',
-        }}
-        onClick={() => setOpen(!open)}
-      >
-        <NumLabel num="01" />
-        {catStyle && (
-          <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 20, background: catStyle.bg, color: catStyle.color, flexShrink: 0 }}>
-            {override!.category}
-          </span>
+      <div style={{ display: 'flex', alignItems: 'flex-start', padding: '12px 16px', gap: 8 }}>
+        <button
+          style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: 0, minWidth: 0 }}
+          onClick={() => setOpen(!open)}
+        >
+          {catStyle && (
+            <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20, background: catStyle.bg, color: catStyle.color, flexShrink: 0 }}>
+              {override!.category}
+            </span>
+          )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 }}>
+            <span style={{ fontWeight: 600, color: '#374151', lineHeight: 1.3 }}>{displayTitle}</span>
+            {timeRange && <span style={{ fontSize: 13, color: '#9ca3af' }}>{timeRange}</span>}
+          </div>
+        </button>
+        {naverQ && (
+          <a href={`https://map.naver.com/p/search/${encodeURIComponent(naverQ)}`}
+            target="_blank" rel="noopener noreferrer"
+            style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '4px 10px', borderRadius: 20, flexShrink: 0, background: '#e8f5e9', color: '#1a7340', fontSize: 11, fontWeight: 600, textDecoration: 'none' }}>
+            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Naver
+          </a>
         )}
-        <span style={{ flex: 1, fontSize: 15, fontWeight: 600, color: '#374151', lineHeight: 1.3 }}>
-          {displayTitle}
-        </span>
-        {timeRange && <span style={{ fontSize: 13, color: '#9ca3af', flexShrink: 0 }}>{timeRange}</span>}
-        <svg viewBox="0 0 24 24" style={{
-          width: 15, height: 15, color: '#9ca3af', flexShrink: 0,
-          transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s',
-        }} fill="none" stroke="currentColor" strokeWidth={2}>
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-      </button>
+        {googleQ && (
+          <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(googleQ)}`}
+            target="_blank" rel="noopener noreferrer"
+            style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '4px 10px', borderRadius: 20, flexShrink: 0, background: '#e8f0fe', color: '#1a56db', fontSize: 11, fontWeight: 600, textDecoration: 'none' }}>
+            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Google
+          </a>
+        )}
+        <button
+          onClick={() => onEdit({ initFields, onSave: handleSave })}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 4,
+            padding: '4px 10px', borderRadius: 20, flexShrink: 0,
+            background: 'none', border: '1px solid #ece8e3',
+            color: '#9ca3af', fontSize: 11, fontWeight: 600, cursor: 'pointer',
+          }}
+        >
+          <svg viewBox="0 0 24 24" style={{ width: 11, height: 11 }} fill="none" stroke="currentColor" strokeWidth={2}>
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+          </svg>
+          編輯
+        </button>
+      </div>
 
       {/* Action bar */}
-      <ActionBar editing={editing} onToggleEdit={() => setEditing(!editing)} />
-
-      {/* Edit panel */}
-      {editing && (
-        <EditPanel initFields={initFields} onSave={handleSave} onClose={() => setEditing(false)} />
-      )}
+      <ActionBar isOpen={open} onToggle={() => setOpen(!open)} />
 
       {/* Expanded content */}
       {open && (
@@ -1002,17 +1036,17 @@ const MergedTransportCard = ({
 
 // ── SectionCard ────────────────────────────────────────────────────────
 const SectionCard = ({
-  section, displayNum, sectionId, override, dayNum,
+  section, displayNum, sectionId, override, dayNum, onEdit,
 }: {
   section: DaySection;
   displayNum: string;
   sectionId: string;
   override?: CardOverride;
   dayNum: number;
+  onEdit: (ctx: { initFields: EditFields; onSave: (f: EditFields) => Promise<void> }) => void;
 }) => {
   const [open,      setOpen]      = useState(false);
   const [linksOpen, setLinksOpen] = useState(false);
-  const [editing,   setEditing]   = useState(false);
 
   const contentBlocks  = section.blocks.filter(b => b.kind !== 'photo-ref');
   const photoRefBlocks = section.blocks.filter(b => b.kind === 'photo-ref') as
@@ -1022,7 +1056,8 @@ const SectionCard = ({
 
   const displayTitle = override?.name || section.title;
   const displayTime  = (override?.timeRange || section.timeRange).split('｜')[0];
-  const mapQ = override?.address || section.mapQuery || '';
+  const naverQ  = override?.naverQuery || override?.address || section.mapQuery || '';
+  const googleQ = override?.googleQuery || '';
   const catStyle = override?.category ? CATEGORY_STYLE[override.category] : null;
   const hasOverride = !!override?.name;
 
@@ -1035,40 +1070,58 @@ const SectionCard = ({
     : sectionToInitFields(section);
 
   return (
-    <div style={{ borderRadius: 'var(--radius-md)', border: '1px solid #ece8e3', background: '#fff', marginBottom: 10, overflow: 'hidden' }}>
+    <div style={{ border: '1px solid #ece8e3', borderRadius: 'var(--radius-md)', background: '#fff', marginBottom: 10, overflow: 'hidden' }}>
       {/* Header */}
-      <button
-        style={{
-          width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-          padding: '12px 16px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer',
-        }}
-        onClick={() => setOpen(!open)}
-      >
-        <NumLabel num={displayNum} />
-        {catStyle && (
-          <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 20, background: catStyle.bg, color: catStyle.color, flexShrink: 0 }}>
-            {override!.category}
-          </span>
+      <div style={{ display: 'flex', alignItems: 'flex-start', padding: '12px 16px', gap: 8 }}>
+        <button
+          style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: 0, minWidth: 0 }}
+          onClick={() => setOpen(!open)}
+        >
+          {catStyle && (
+            <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20, background: catStyle.bg, color: catStyle.color, flexShrink: 0 }}>
+              {override!.category}
+            </span>
+          )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 }}>
+            <span style={{ fontWeight: 600, color: '#374151', lineHeight: 1.3 }}>{displayTitle}</span>
+            {displayTime && <span style={{ fontSize: 13, color: '#9ca3af' }}>{displayTime}</span>}
+          </div>
+        </button>
+        {naverQ && (
+          <a href={`https://map.naver.com/p/search/${encodeURIComponent(naverQ)}`}
+            target="_blank" rel="noopener noreferrer"
+            style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '4px 10px', borderRadius: 20, flexShrink: 0, background: '#e8f5e9', color: '#1a7340', fontSize: 11, fontWeight: 600, textDecoration: 'none' }}>
+            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Naver
+          </a>
         )}
-        <span style={{ flex: 1, fontSize: 15, fontWeight: 600, color: '#374151', lineHeight: 1.3 }}>
-          {displayTitle}
-        </span>
-        {displayTime && <span style={{ fontSize: 13, color: '#9ca3af', flexShrink: 0 }}>{displayTime}</span>}
-        <svg viewBox="0 0 24 24" style={{
-          width: 15, height: 15, color: '#9ca3af', flexShrink: 0,
-          transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s',
-        }} fill="none" stroke="currentColor" strokeWidth={2}>
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-      </button>
+        {googleQ && (
+          <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(googleQ)}`}
+            target="_blank" rel="noopener noreferrer"
+            style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '4px 10px', borderRadius: 20, flexShrink: 0, background: '#e8f0fe', color: '#1a56db', fontSize: 11, fontWeight: 600, textDecoration: 'none' }}>
+            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Google
+          </a>
+        )}
+        <button
+          onClick={() => onEdit({ initFields, onSave: handleSave })}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 4,
+            padding: '4px 10px', borderRadius: 20, flexShrink: 0,
+            background: 'none', border: '1px solid #ece8e3',
+            color: '#9ca3af', fontSize: 11, fontWeight: 600, cursor: 'pointer',
+          }}
+        >
+          <svg viewBox="0 0 24 24" style={{ width: 11, height: 11 }} fill="none" stroke="currentColor" strokeWidth={2}>
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+          </svg>
+          編輯
+        </button>
+      </div>
 
       {/* Action bar */}
-      <ActionBar mapQuery={mapQ || undefined} editing={editing} onToggleEdit={() => setEditing(!editing)} />
-
-      {/* Edit panel */}
-      {editing && (
-        <EditPanel initFields={initFields} onSave={handleSave} onClose={() => setEditing(false)} />
-      )}
+      <ActionBar isOpen={open} onToggle={() => setOpen(!open)} />
 
       {/* Expanded content */}
       {open && (
@@ -1134,61 +1187,98 @@ const SectionCard = ({
 };
 
 // ── 自訂卡片（用戶新增） ───────────────────────────────────────────────
-const CustomSectionCard = ({ card, displayNum }: { card: CustomCard; displayNum: string }) => {
-  const [open,    setOpen]    = useState(false);
-  const [editing, setEditing] = useState(false);
+const CustomSectionCard = ({
+  card, displayNum, onEdit,
+}: {
+  card: CustomCard;
+  displayNum: string;
+  onEdit: (ctx: { initFields: EditFields; onSave: (f: EditFields) => Promise<void> }) => void;
+}) => {
+  const [open, setOpen] = useState(false);
 
   const handleSave = async (fields: EditFields) => {
     await setDoc(doc(db, 'customCards', card.id), {
       dayNum: card.dayNum, order: card.order,
       title: fields.name, timeRange: fields.timeRange,
+      category: fields.category,
+      naverQuery: fields.naverQuery,
+      googleQuery: fields.googleQuery,
       notes: fields.content || fields.notes,
       updatedAt: serverTimestamp(),
     });
   };
 
   const initFields: EditFields = {
-    category: '', name: card.title, timeRange: card.timeRange,
-    openHours: '', transportTime: '', address: '',
+    category: card.category ?? '', name: card.title, timeRange: card.timeRange,
+    openHours: '', transportTime: '',
+    naverQuery: card.naverQuery ?? '', googleQuery: card.googleQuery ?? '',
     content: card.notes, notes: '', links: [],
   };
 
+  const catStyle = card.category ? CATEGORY_STYLE[card.category] : null;
+
   return (
     <div style={{
-      borderRadius: 'var(--radius-md)',
       border: '1px dashed #c4a882',
+      borderRadius: 'var(--radius-md)',
       background: '#fffdf9',
       marginBottom: 10, overflow: 'hidden',
     }}>
-      <button
-        style={{
-          width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-          padding: '12px 16px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer',
-        }}
-        onClick={() => setOpen(!open)}
-      >
-        <NumLabel num={displayNum} />
-        <span style={{ flex: 1, fontSize: 15, fontWeight: 600, color: '#374151', lineHeight: 1.3 }}>{card.title}</span>
-        {card.timeRange && <span style={{ fontSize: 13, color: '#9ca3af', flexShrink: 0 }}>{card.timeRange}</span>}
-        <svg viewBox="0 0 24 24" style={{
-          width: 15, height: 15, color: '#9ca3af', flexShrink: 0,
-          transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s',
-        }} fill="none" stroke="currentColor" strokeWidth={2}>
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-      </button>
+      <div style={{ display: 'flex', alignItems: 'flex-start', padding: '12px 16px', gap: 8 }}>
+        <button
+          style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: 0, minWidth: 0 }}
+          onClick={() => setOpen(!open)}
+        >
+          {catStyle && (
+            <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20, background: catStyle.bg, color: catStyle.color, flexShrink: 0 }}>
+              {card.category}
+            </span>
+          )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 }}>
+            <span style={{ fontWeight: 600, color: '#374151', lineHeight: 1.3 }}>{card.title}</span>
+            {card.timeRange && <span style={{ fontSize: 13, color: '#9ca3af' }}>{card.timeRange}</span>}
+          </div>
+        </button>
+        {card.naverQuery && (
+          <a href={`https://map.naver.com/p/search/${encodeURIComponent(card.naverQuery)}`}
+            target="_blank" rel="noopener noreferrer"
+            style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '4px 10px', borderRadius: 20, flexShrink: 0, background: '#e8f5e9', color: '#1a7340', fontSize: 11, fontWeight: 600, textDecoration: 'none' }}>
+            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Naver
+          </a>
+        )}
+        {card.googleQuery && (
+          <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.googleQuery)}`}
+            target="_blank" rel="noopener noreferrer"
+            style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '4px 10px', borderRadius: 20, flexShrink: 0, background: '#e8f0fe', color: '#1a56db', fontSize: 11, fontWeight: 600, textDecoration: 'none' }}>
+            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Google
+          </a>
+        )}
+        <button
+          onClick={() => onEdit({ initFields, onSave: handleSave })}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 4,
+            padding: '4px 10px', borderRadius: 20, flexShrink: 0,
+            background: 'none', border: '1px solid #ece8e3',
+            color: '#9ca3af', fontSize: 11, fontWeight: 600, cursor: 'pointer',
+          }}
+        >
+          <svg viewBox="0 0 24 24" style={{ width: 11, height: 11 }} fill="none" stroke="currentColor" strokeWidth={2}>
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+          </svg>
+          編輯
+        </button>
+      </div>
 
       {/* Action bar */}
-      <ActionBar editing={editing} onToggleEdit={() => setEditing(!editing)} />
-
-      {editing && (
-        <EditPanel initFields={initFields} onSave={handleSave} onClose={() => setEditing(false)} />
-      )}
+      <ActionBar isOpen={open} onToggle={() => setOpen(!open)} />
 
       {open && (
         <div style={{ padding: '0 16px 16px', borderTop: `1px dashed #e8d8c0`, paddingTop: 14 }}>
           {card.notes ? (
-            <div style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{card.notes}</div>
+            <OverrideDisplay ov={{ content: card.notes }} />
           ) : (
             <p style={{ fontSize: 13, color: '#c0b8b0', margin: 0 }}>（尚無內容）</p>
           )}
@@ -1213,6 +1303,10 @@ const DayPlanView = ({ plan }: { plan: DayPlan }) => {
   const [overrides,   setOverrides]   = useState<Record<string, CardOverride>>({});
   const [customCards, setCustomCards] = useState<CustomCard[]>([]);
   const [addingCard,  setAddingCard]  = useState(false);
+  const [editCtx,     setEditCtx]     = useState<{
+    initFields: EditFields;
+    onSave: (fields: EditFields) => Promise<void>;
+  } | null>(null);
 
   useEffect(() => {
     const q = query(CARD_OVERRIDES_COL, where('dayNum', '==', plan.day));
@@ -1229,12 +1323,15 @@ const DayPlanView = ({ plan }: { plan: DayPlan }) => {
       setCustomCards(
         snap.docs
           .map(d => ({
-            id: d.id,
-            dayNum:    d.data().dayNum    ?? plan.day,
-            title:     d.data().title     ?? '',
-            timeRange: d.data().timeRange ?? '',
-            notes:     d.data().notes     ?? '',
-            order:     d.data().order     ?? 0,
+            id:          d.id,
+            dayNum:      d.data().dayNum      ?? plan.day,
+            title:       d.data().title       ?? '',
+            timeRange:   d.data().timeRange   ?? '',
+            notes:       d.data().notes       ?? '',
+            order:       d.data().order       ?? 0,
+            category:    d.data().category    ?? '',
+            naverQuery:  d.data().naverQuery  ?? '',
+            googleQuery: d.data().googleQuery ?? '',
           }))
           .sort((a, b) => a.order - b.order)
       );
@@ -1270,6 +1367,7 @@ const DayPlanView = ({ plan }: { plan: DayPlan }) => {
           sectionId="day1-transport"
           override={overrides['day1-transport']}
           dayNum={plan.day}
+          onEdit={setEditCtx}
         />
       )}
 
@@ -1283,6 +1381,7 @@ const DayPlanView = ({ plan }: { plan: DayPlan }) => {
             sectionId={sectionId}
             override={overrides[sectionId]}
             dayNum={plan.day}
+            onEdit={setEditCtx}
           />
         );
       })}
@@ -1294,8 +1393,27 @@ const DayPlanView = ({ plan }: { plan: DayPlan }) => {
           displayNum={String(
             (plan.day === 1 ? totalRegular + 2 : totalRegular + 1) + i
           ).padStart(2, '0')}
+          onEdit={setEditCtx}
         />
       ))}
+
+      {editCtx && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}
+          onClick={() => setEditCtx(null)}
+        >
+          <div
+            style={{ background: '#fff', borderRadius: 12, width: '100%', maxWidth: 420, maxHeight: '85vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f0ebe5', flexShrink: 0 }}>
+              <span style={{ fontSize: 15, fontWeight: 700, color: '#374151' }}>編輯卡片</span>
+              <button onClick={() => setEditCtx(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#9ca3af', lineHeight: 1, padding: '0 4px' }}>×</button>
+            </div>
+            <EditPanel initFields={editCtx.initFields} onSave={editCtx.onSave} onClose={() => setEditCtx(null)} />
+          </div>
+        </div>
+      )}
 
       <button
         onClick={() => setAddingCard(true)}

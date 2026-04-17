@@ -116,36 +116,53 @@ const ChecklistPanel = ({ dayNum }: { dayNum: number }) => {
       background: 'var(--color-bg-card)',
       overflow: 'hidden',
     }}>
-      {/* ── 標題列 ── */}
-      <button
-        onClick={() => setOpen(!open)}
-        style={{
-          width: '100%', display: 'flex', alignItems: 'center', gap: 8,
-          padding: '12px 16px', background: 'none', border: 'none',
-          cursor: 'pointer', textAlign: 'left',
-        }}
-      >
-        <svg viewBox="0 0 24 24" style={{ width: 15, height: 15, color: 'var(--color-primary)', flexShrink: 0 }}
-          fill="none" stroke="currentColor" strokeWidth={2}>
-          <path d="M9 11l3 3L22 4" />
-          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-        </svg>
-        <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: 'var(--color-text-main)' }}>{title}</span>
-        {items.length > 0 && (
-          <span style={{
-            fontSize: 11, fontWeight: 600, marginRight: 6,
-            color: doneCount === items.length ? 'var(--color-primary)' : 'var(--color-text-light)',
-          }}>
-            {doneCount}/{items.length}
-          </span>
-        )}
-        <svg viewBox="0 0 24 24" style={{
-          width: 14, height: 14, color: 'var(--color-text-light)', flexShrink: 0,
-          transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s',
-        }} fill="none" stroke="currentColor" strokeWidth={2}>
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-      </button>
+      {/* ── 標題列（含編輯按鈕）── */}
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        <button
+          onClick={() => setOpen(!open)}
+          style={{
+            flex: 1, display: 'flex', alignItems: 'center', gap: 8,
+            padding: '12px 16px', background: 'none', border: 'none',
+            cursor: 'pointer', textAlign: 'left',
+          }}
+        >
+          <svg viewBox="0 0 24 24" style={{ width: 15, height: 15, color: 'var(--color-primary)', flexShrink: 0 }}
+            fill="none" stroke="currentColor" strokeWidth={2}>
+            <path d="M9 11l3 3L22 4" />
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+          </svg>
+          <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: 'var(--color-text-main)' }}>{title}</span>
+          {items.length > 0 && (
+            <span style={{
+              fontSize: 11, fontWeight: 600, marginRight: 6,
+              color: doneCount === items.length ? 'var(--color-primary)' : 'var(--color-text-light)',
+            }}>
+              {doneCount}/{items.length}
+            </span>
+          )}
+          <svg viewBox="0 0 24 24" style={{
+            width: 14, height: 14, color: 'var(--color-text-light)', flexShrink: 0,
+            transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s',
+          }} fill="none" stroke="currentColor" strokeWidth={2}>
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+        <button
+          onClick={() => setEditing(true)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 4,
+            padding: '4px 10px', marginRight: 12, borderRadius: 20,
+            background: 'none', border: '1px solid #ece8e3',
+            color: '#9ca3af', fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
+          }}
+        >
+          <svg viewBox="0 0 24 24" style={{ width: 11, height: 11 }} fill="none" stroke="currentColor" strokeWidth={2}>
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+          </svg>
+          編輯
+        </button>
+      </div>
 
       {/* ── 進度條 ── */}
       {items.length > 0 && (
@@ -159,121 +176,108 @@ const ChecklistPanel = ({ dayNum }: { dayNum: number }) => {
         </div>
       )}
 
-      {/* ── Action bar（編輯按鈕） ── */}
-      <div style={{
-        display: 'flex', alignItems: 'center',
-        padding: '6px 12px',
-        borderTop: '1px solid #f0ebe5',
-        background: '#fdfaf7',
-      }}>
-        <div style={{ flex: 1 }} />
-        <button
-          onClick={() => { setEditing(!editing); if (!open) setOpen(true); }}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 4,
-            padding: '4px 10px', borderRadius: 20,
-            background: editing ? 'rgba(125,155,170,0.15)' : 'none',
-            border: editing ? '1px solid rgba(125,155,170,0.3)' : '1px solid #ece8e3',
-            color: editing ? '#4a7a8a' : '#9ca3af',
-            fontSize: 11, fontWeight: 600, cursor: 'pointer',
-          }}
-        >
-          <svg viewBox="0 0 24 24" style={{ width: 11, height: 11 }} fill="none" stroke="currentColor" strokeWidth={2}>
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-          </svg>
-          編輯
-        </button>
-      </div>
-
-      {/* ── 編輯面板 ── */}
+      {/* ── 編輯 Modal ── */}
       {editing && (
-        <div style={{
-          padding: '12px 16px 14px',
-          borderTop: '1px solid #e8e0d8',
-          background: '#faf8f4',
-          display: 'flex', flexDirection: 'column', gap: 8,
-        }}>
-
-          {/* 現有項目列表（可編輯/刪除） */}
-          {items.map(item => (
-            <div key={item.id}>
-              {editingId === item.id ? (
-                // 行內編輯
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <input
-                      value={editLabel}
-                      onChange={e => setEditLabel(e.target.value)}
-                      placeholder="標籤（選填）"
-                      style={{ ...iStyle, width: 100, flexShrink: 0 }}
-                    />
-                    <input
-                      value={editDesc}
-                      onChange={e => setEditDesc(e.target.value)}
-                      placeholder="內容"
-                      style={{ ...iStyle, flex: 1 }}
-                    />
-                  </div>
-                  <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                    <button onClick={() => setEditingId(null)}
-                      style={{ ...iStyle, padding: '4px 12px', cursor: 'pointer', color: '#9ca3af' }}>
-                      取消
-                    </button>
-                    <button onClick={() => saveEdit(item.id)}
-                      style={{ ...iStyle, padding: '4px 12px', cursor: 'pointer', background: '#7d9baa', color: '#fff', border: 'none' }}>
-                      儲存
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                // 顯示模式（帶刪除/編輯按鈕）
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                  <div style={{ flex: 1, fontSize: 12, color: '#374151', lineHeight: 1.6 }}>
-                    {item.label && <span style={{ fontWeight: 600 }}>{item.label}　</span>}
-                    {item.desc}
-                  </div>
-                  <button onClick={() => startEdit(item)}
-                    style={{ padding: '2px 6px', fontSize: 11, color: '#9ca3af', background: 'none', border: '1px solid #ece8e3', borderRadius: 4, cursor: 'pointer', flexShrink: 0 }}>
-                    改
-                  </button>
-                  <button onClick={() => deleteItem(item.id)}
-                    style={{ padding: '2px 6px', fontSize: 12, color: '#c4a882', background: 'none', border: '1px solid #ece8e3', borderRadius: 4, cursor: 'pointer', flexShrink: 0 }}>
-                    ×
-                  </button>
-                </div>
-              )}
-              <div style={{ height: 1, background: '#ece8e3', marginTop: 8 }} />
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            background: 'rgba(0,0,0,.4)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '0 16px',
+          }}
+          onClick={() => setEditing(false)}
+        >
+          <div
+            style={{
+              background: '#fff', borderRadius: 12, padding: '20px 18px',
+              width: '100%', maxWidth: 420, maxHeight: '80vh', overflowY: 'auto',
+              display: 'flex', flexDirection: 'column', gap: 8,
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#374151', margin: 0 }}>{title}</p>
+              <button onClick={() => setEditing(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#9ca3af', lineHeight: 1, padding: '0 4px' }}>×</button>
             </div>
-          ))}
 
-          {/* 新增一筆 */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 4 }}>
-            <div style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600 }}>新增項目</div>
-            <div style={{ display: 'flex', gap: 6 }}>
-              <input
-                value={newLabel}
-                onChange={e => setNewLabel(e.target.value)}
-                placeholder="標籤（選填）"
-                style={{ ...iStyle, width: 100, flexShrink: 0 }}
-              />
-              <input
-                value={newDesc}
-                onChange={e => setNewDesc(e.target.value)}
-                placeholder="內容說明"
-                style={{ ...iStyle, flex: 1 }}
-                onKeyDown={e => e.key === 'Enter' && addItem()}
-              />
-              <button
-                onClick={addItem}
-                disabled={adding || !newDesc.trim()}
-                style={{
-                  flexShrink: 0, padding: '6px 14px', borderRadius: 6,
-                  border: 'none', background: '#9eab96',
-                  fontSize: 12, color: '#fff', cursor: 'pointer',
-                  opacity: (adding || !newDesc.trim()) ? 0.6 : 1,
-                }}
-              >{adding ? '…' : '新增'}</button>
+            {/* 現有項目列表（可編輯/刪除） */}
+            {items.map(item => (
+              <div key={item.id}>
+                {editingId === item.id ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <input
+                        value={editLabel}
+                        onChange={e => setEditLabel(e.target.value)}
+                        placeholder="標籤（選填）"
+                        style={{ ...iStyle, width: 100, flexShrink: 0 }}
+                      />
+                      <input
+                        value={editDesc}
+                        onChange={e => setEditDesc(e.target.value)}
+                        placeholder="內容"
+                        style={{ ...iStyle, flex: 1 }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                      <button onClick={() => setEditingId(null)}
+                        style={{ ...iStyle, padding: '4px 12px', cursor: 'pointer', color: '#9ca3af' }}>
+                        取消
+                      </button>
+                      <button onClick={() => saveEdit(item.id)}
+                        style={{ ...iStyle, padding: '4px 12px', cursor: 'pointer', background: '#7d9baa', color: '#fff', border: 'none' }}>
+                        儲存
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                    <div style={{ flex: 1, fontSize: 12, color: '#374151', lineHeight: 1.6 }}>
+                      {item.label && <span style={{ fontWeight: 600 }}>{item.label}　</span>}
+                      {item.desc}
+                    </div>
+                    <button onClick={() => startEdit(item)}
+                      style={{ padding: '2px 6px', fontSize: 11, color: '#9ca3af', background: 'none', border: '1px solid #ece8e3', borderRadius: 4, cursor: 'pointer', flexShrink: 0 }}>
+                      改
+                    </button>
+                    <button onClick={() => deleteItem(item.id)}
+                      style={{ padding: '2px 6px', fontSize: 12, color: '#c4a882', background: 'none', border: '1px solid #ece8e3', borderRadius: 4, cursor: 'pointer', flexShrink: 0 }}>
+                      ×
+                    </button>
+                  </div>
+                )}
+                <div style={{ height: 1, background: '#ece8e3', marginTop: 8 }} />
+              </div>
+            ))}
+
+            {/* 新增一筆 */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 4 }}>
+              <div style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600 }}>新增項目</div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <input
+                  value={newLabel}
+                  onChange={e => setNewLabel(e.target.value)}
+                  placeholder="標籤（選填）"
+                  style={{ ...iStyle, width: 100, flexShrink: 0 }}
+                />
+                <input
+                  value={newDesc}
+                  onChange={e => setNewDesc(e.target.value)}
+                  placeholder="內容說明"
+                  style={{ ...iStyle, flex: 1 }}
+                  onKeyDown={e => e.key === 'Enter' && addItem()}
+                />
+                <button
+                  onClick={addItem}
+                  disabled={adding || !newDesc.trim()}
+                  style={{
+                    flexShrink: 0, padding: '6px 14px', borderRadius: 6,
+                    border: 'none', background: '#9eab96',
+                    fontSize: 12, color: '#fff', cursor: 'pointer',
+                    opacity: (adding || !newDesc.trim()) ? 0.6 : 1,
+                  }}
+                >{adding ? '…' : '新增'}</button>
+              </div>
             </div>
           </div>
         </div>
