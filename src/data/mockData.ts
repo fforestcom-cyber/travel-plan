@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════
-   靜態假資料（對應 template.html 所有視圖）
+   靜態假資料
    ═══════════════════════════════════════════════════════ */
 
 // ── 行程基本資訊 ────────────────────────────────────────
@@ -73,46 +73,4 @@ export const WEATHER_DAYS: DayWeather[] = [
   { day: '週五', date: 12, type: 'cloudy',      temp: '25°', range: '/ 20°C', desc: '多雲，偶有雲層遮蔽陽光',       rain: '降雨 20%', outfit: '長袖薄外套'     },
   { day: '週六', date: 13, type: 'rainy',       temp: '22°', range: '/ 18°C', desc: '有雨，出門記得帶傘',           rain: '降雨 80%', outfit: '雨衣＋防水鞋'   },
   { day: '週日', date: 14, type: 'heavyrain',   temp: '20°', range: '/ 16°C', desc: '大雨特報，避免戶外活動',       rain: '降雨 95%', outfit: '全套雨具必備'   },
-];
-
-// ── 記帳分類 ─────────────────────────────────────────────
-export const EXPENSE_CATS = [
-  { name: '餐飲', amt: '₩18,000', pct: 28, color: '#7D9BAA' },
-  { name: '購物', amt: '₩30,000', pct: 47, color: '#B09080' },
-  { name: '交通', amt: '₩9,000',  pct: 14, color: '#849E88' },
-  { name: '景點', amt: '₩7,000',  pct: 11, color: '#9888AA' },
-];
-
-export type PayType  = 'cash' | 'card';
-export type Category = '餐飲' | '購物' | '交通' | '景點';
-
-export interface ExpenseItem {
-  id: number;
-  title: string; date: string; category: Category;
-  type: PayType; price: string;
-}
-
-export const EXPENSE_ITEMS: ExpenseItem[] = [
-  { id: 1, title: '松亭三代豬肉湯飯', date: '06/10', category: '餐飲', type: 'cash', price: '₩ 9,000'  },
-  { id: 2, title: 'Olive Young 美妝', date: '06/10', category: '購物', type: 'card', price: '₩ 45,000' },
-  { id: 3, title: '地鐵 T-money',     date: '06/10', category: '交通', type: 'cash', price: '₩ 3,200'  },
-  { id: 4, title: '甘川文化村門票',   date: '06/11', category: '景點', type: 'cash', price: '₩ 6,800'  },
-];
-
-// ── 備註 ─────────────────────────────────────────────────
-export type DotColor = 'red' | 'yellow' | 'green' | 'blue';
-
-export interface NoteItem {
-  id: number; text: string; date: string;
-  color: DotColor; img?: string;
-}
-
-export const INIT_NOTES: NoteItem[] = [
-  {
-    id: 1, color: 'yellow', date: '6月10日 20:14',
-    text: '記得幫同事買 Olive Young 的維他命C！',
-    img:  'https://images.unsplash.com/photo-1607083206869-4c7672e72a8a?auto=format&fit=crop&q=80&w=400',
-  },
-  { id: 2, color: 'blue',  date: '6月10日 09:30', text: '計程車司機不一定懂英文，記得截圖 Naver Map 的韓文地址備用。' },
-  { id: 3, color: 'green', date: '6月09日 22:05', text: '購物清單：韓牛牛排片 × 2、Laneige 水凝面膜、COSRX 蝸牛精華、便利商店早午餐試吃清單整理' },
 ];
