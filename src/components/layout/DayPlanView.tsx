@@ -684,14 +684,8 @@ const EditPanel = ({
 // ── 覆蓋資料顯示 ──────────────────────────────────────────────────────
 const OverrideDisplay = ({ ov, isChecklist = false }: { ov: CardOverride; isChecklist?: boolean }) => (
   <div>
-    {(ov.openHours || ov.transportTime || ov.cost) && (
+    {(ov.transportTime || ov.cost) && (
       <div style={{ marginBottom: 14 }}>
-        {ov.openHours && (
-          <div>
-            <span className="badge badge--primary" style={{ display: 'inline-block', marginBottom: 4 }}>營業時間</span>
-            <p style={{ fontSize: 14, color: '#374151', lineHeight: 1.7, margin: '0 0 8px' }}>{ov.openHours}</p>
-          </div>
-        )}
         {(ov.transportTime || ov.cost) && (
           <div style={{ display: 'flex', gap: 24 }}>
             {ov.transportTime && (
@@ -1025,13 +1019,11 @@ const SectionCard = ({
 
 // ── 自訂卡片（用戶新增） ───────────────────────────────────────────────
 const CustomSectionCard = ({
-  card, displayNum, onEdit, onMoveUp, onMoveDown,
+  card, displayNum, onEdit,
 }: {
   card: CustomCard;
   displayNum: string;
   onEdit: (ctx: { initFields: EditFields; onSave: (f: EditFields) => Promise<void> }) => void;
-  onMoveUp?: () => void;
-  onMoveDown?: () => void;
 }) => {
   const [open, setOpen] = useState(false);
 
@@ -1126,12 +1118,6 @@ const CustomSectionCard = ({
               </a>
             )}
             <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}>
-              {onMoveUp && (
-                <button onClick={onMoveUp} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, borderRadius: 6, border: 'none', background: 'none', color: '#9ca3af', cursor: 'pointer', flexShrink: 0, fontSize: 13 }}>↑</button>
-              )}
-              {onMoveDown && (
-                <button onClick={onMoveDown} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, borderRadius: 6, border: 'none', background: 'none', color: '#9ca3af', cursor: 'pointer', flexShrink: 0, fontSize: 13 }}>↓</button>
-              )}
               <button
                 onClick={() => window.confirm(`確定刪除「${card.title}」？`) && deleteDoc(doc(db, 'customCards', card.id))}
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, borderRadius: 6, border: 'none', background: 'none', color: '#c4a882', cursor: 'pointer', flexShrink: 0 }}
@@ -1175,10 +1161,10 @@ const CustomSectionCard = ({
 const SKIP_NUMS = new Set(['11']);
 
 const DayPlanView = ({ plan }: { plan: DayPlan }) => {
-  const [overrides,   setOverrides]   = useState<Record<string, CardOverride>>({});
-  const [customCards, setCustomCards] = useState<CustomCard[]>([]);
-  const [addingCard,  setAddingCard]  = useState(false);
-  const [editCtx,     setEditCtx]     = useState<{
+  const [overrides,    setOverrides]    = useState<Record<string, CardOverride>>({});
+  const [customCards,  setCustomCards]  = useState<CustomCard[]>([]);
+  const [addingCard, setAddingCard] = useState(false);
+  const [editCtx,    setEditCtx]    = useState<{
     initFields: EditFields;
     onSave: (fields: EditFields) => Promise<void>;
   } | null>(null);
@@ -1218,22 +1204,7 @@ const DayPlanView = ({ plan }: { plan: DayPlan }) => {
     }, err => console.error(err));
   }, [plan.day]);
 
-  const regularSections = plan.sections.filter(s => !SKIP_NUMS.has(s.num));
-
-  const totalRegular = regularSections.length;
-  const nextOrder    = customCards.length > 0 ? Math.max(...customCards.map(c => c.order)) + 1 : totalRegular + 2;
-
-  const moveCard = async (idx: number, direction: 'up' | 'down') => {
-    const sorted = [...customCards];
-    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
-    if (swapIdx < 0 || swapIdx >= sorted.length) return;
-    const a = sorted[idx];
-    const b = sorted[swapIdx];
-    await Promise.all([
-      updateDoc(doc(db, 'customCards', a.id), { order: b.order }),
-      updateDoc(doc(db, 'customCards', b.id), { order: a.order }),
-    ]);
-  };
+  const nextOrder = customCards.length > 0 ? Math.max(...customCards.map(c => c.order)) + 1 : 100;
 
   return (
     <div>
@@ -1246,41 +1217,39 @@ const DayPlanView = ({ plan }: { plan: DayPlan }) => {
         <h3 style={{ fontSize: 14, fontWeight: 700, color: '#374151', margin: 0 }}>今日行程</h3>
       </div>
 
-      {regularSections.map((section, i) => {
-        const sectionId = `day${plan.day}-s${section.num}`;
-        if (overrides[sectionId]?.deleted) return null;
-        const isFirstDayFirstCard = plan.day === 1 && section.num === '01';
-        const handleDelete = isFirstDayFirstCard ? async () => {
-          if (window.confirm(`確定刪除「${section.title}」？`)) {
-            await setDoc(doc(db, 'cardOverrides', sectionId), { deleted: true, dayNum: plan.day }, { merge: true });
-          }
-        } : undefined;
-        return (
-          <SectionCard
-            key={section.num}
-            section={section}
-            displayNum={section.num}
-            sectionId={sectionId}
-            override={overrides[sectionId]}
-            dayNum={plan.day}
-            onEdit={setEditCtx}
-            onDelete={handleDelete}
-          />
-        );
-      })}
-
-      {customCards.map((card, i) => (
+      {[...customCards].sort((a, b) => a.order - b.order).map(card => (
         <CustomSectionCard
           key={card.id}
           card={card}
-          displayNum={String(
-            (plan.day === 1 ? totalRegular + 2 : totalRegular + 1) + i
-          ).padStart(2, '0')}
+          displayNum={card.order.toString().padStart(2, '0')}
           onEdit={setEditCtx}
-          onMoveUp={i > 0 ? () => moveCard(i, 'up') : undefined}
-          onMoveDown={i < customCards.length - 1 ? () => moveCard(i, 'down') : undefined}
         />
       ))}
+
+      {[...plan.sections]
+        .sort((a, b) => Number(a.num) - Number(b.num))
+        .filter(s => !SKIP_NUMS.has(s.num))
+        .map(section => {
+          const sectionId = `day${plan.day}-s${section.num}`;
+          if (overrides[sectionId]?.deleted) return null;
+          const handleDelete = async () => {
+            if (window.confirm(`確定刪除「${section.title}」？`)) {
+              await setDoc(doc(db, 'cardOverrides', sectionId), { deleted: true, dayNum: plan.day }, { merge: true });
+            }
+          };
+          return (
+            <SectionCard
+              key={section.num}
+              section={section}
+              displayNum={section.num}
+              sectionId={sectionId}
+              override={overrides[sectionId]}
+              dayNum={plan.day}
+              onEdit={setEditCtx}
+              onDelete={handleDelete}
+            />
+          );
+        })}
 
       {editCtx && (
         <div
