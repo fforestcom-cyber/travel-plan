@@ -147,8 +147,8 @@ const FlightsCombinedModal = ({
     catch(e) { console.error(e); setSaving(false); }
   };
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onMouseDown={e => e.target === e.currentTarget && onClose()}>
-      <div style={{ background: '#fff', borderRadius: '16px 16px 0 0', width: '100%', maxWidth: 480, maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }} onMouseDown={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ background: '#fff', borderRadius: 12, width: '100%', maxWidth: 480, maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f0ebe5', flexShrink: 0 }}>
           <span style={{ fontSize: 15, fontWeight: 700, color: '#374151' }}>編輯機票</span>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#9ca3af' }}>×</button>
@@ -298,8 +298,8 @@ const AccomManagerModal = ({ items, onClose }: { items: Accom[]; onClose: () => 
   const btnStyle: React.CSSProperties = { padding: '7px 20px', borderRadius: 999, border: 'none', background: '#7d9baa', fontSize: 12, color: '#fff', cursor: 'pointer' };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onMouseDown={e => e.target === e.currentTarget && onClose()}>
-      <div style={{ background: '#fff', borderRadius: '16px 16px 0 0', width: '100%', maxWidth: 480, maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }} onMouseDown={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ background: '#fff', borderRadius: 12, width: '100%', maxWidth: 480, maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f0ebe5', flexShrink: 0 }}>
           <span style={{ fontSize: 15, fontWeight: 700, color: '#374151' }}>住宿資訊</span>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#9ca3af' }}>×</button>
@@ -394,83 +394,95 @@ const AccommodationCard = () => {
 type EditItem = { id: string; text: string; sub: string; done: boolean; order: number; };
 
 const ChecklistBulkEditor = ({ type, items, onClose }: { type: 'todo' | 'prep'; items: CheckItem[]; onClose: () => void; }) => {
-  const [local, setLocal]   = useState<EditItem[]>(items.map(i => ({ ...i })));
-  const [deleted, setDeleted] = useState<string[]>([]);
-  const [saving, setSaving] = useState(false);
+  const [local,  setLocal]  = useState<EditItem[]>(items.map(i => ({ ...i })));
+  const [saving, setSaving] = useState<string | null>(null); // id or 'new-{idx}' being saved
 
-  const update = (idx: number, field: keyof EditItem, val: string | boolean) =>
+  const update = (idx: number, field: keyof EditItem, val: string) =>
     setLocal(prev => prev.map((it, i) => i === idx ? { ...it, [field]: val } : it));
 
-  const remove = (idx: number) => {
-    const it = local[idx];
-    if (it.id) setDeleted(d => [...d, it.id]);
-    setLocal(prev => prev.filter((_, i) => i !== idx));
-  };
-
-  const add = () => {
-    const maxOrder = local.length > 0 ? Math.max(...local.map(i => i.order)) + 1 : 0;
+  const addRow = () => {
+    const maxOrder = items.length > 0 ? Math.max(...items.map(i => i.order)) + 1 : local.length;
     setLocal(prev => [...prev, { id: '', text: '', sub: '', done: false, order: maxOrder }]);
   };
 
-  const save = async () => {
-    setSaving(true);
+  const saveRow = async (idx: number) => {
+    const it = local[idx];
+    if (!it.text.trim() || saving !== null) return;
+    const key = it.id || `new-${idx}`;
+    setSaving(key);
     try {
-      await Promise.all(deleted.map(id => deleteDoc(doc(db, 'homeChecklist', id))));
-      await Promise.all(local.map((it, idx) => {
-        const data = { text: it.text.trim(), sub: it.sub.trim(), done: it.done, type, order: idx };
-        if (it.id) return setDoc(doc(db, 'homeChecklist', it.id), data, { merge: true });
-        if (it.text.trim()) return addDoc(CHECKLIST_COL, data);
-        return Promise.resolve();
-      }));
-      onClose();
-    } catch (e) { console.error(e); setSaving(false); }
+      const data = { text: it.text.trim(), sub: (it.sub ?? '').trim(), done: it.done, type, order: it.order };
+      if (it.id) {
+        await setDoc(doc(db, 'homeChecklist', it.id), data, { merge: true });
+      } else {
+        await addDoc(CHECKLIST_COL, data);
+        setLocal(prev => prev.filter((_, i) => i !== idx));
+      }
+    } catch (e) { console.error(e); }
+    finally { setSaving(null); }
+  };
+
+  const deleteRow = async (idx: number) => {
+    const it = local[idx];
+    if (it.id) await deleteDoc(doc(db, 'homeChecklist', it.id));
+    setLocal(prev => prev.filter((_, i) => i !== idx));
   };
 
   const title = type === 'todo' ? '待辦事項' : '事前準備';
+  const btnStyle = (active: boolean): React.CSSProperties => ({
+    flexShrink: 0, padding: '5px 12px', marginTop: 2,
+    borderRadius: 6, border: 'none',
+    background: '#7d9baa', color: '#fff',
+    fontSize: 12, fontWeight: 600, cursor: 'pointer',
+    opacity: active ? 0.5 : 1,
+  });
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onMouseDown={e => e.target === e.currentTarget && onClose()}>
-      <div style={{ background: '#fff', borderRadius: '16px 16px 0 0', width: '100%', maxWidth: 480, maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
-        {/* Header */}
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }} onMouseDown={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ background: '#fff', borderRadius: 12, width: '100%', maxWidth: 480, maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f0ebe5', flexShrink: 0 }}>
           <span style={{ fontSize: 15, fontWeight: 700, color: '#374151' }}>編輯{title}</span>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#9ca3af' }}>×</button>
         </div>
-        {/* Items */}
-        <div style={{ overflowY: 'auto', flex: 1, padding: '0 18px' }}>
-          {local.map((it, idx) => (
-            <div key={idx} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', padding: '10px 0', borderBottom: '1px solid #f5f3f0' }}>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <input
-                  value={it.text} onChange={e => update(idx, 'text', e.target.value)}
-                  placeholder="項目名稱" autoFocus={idx === local.length - 1 && !it.id}
-                  style={{ ...iStyle, padding: '5px 8px' }}
-                />
-                <input
-                  value={it.sub} onChange={e => update(idx, 'sub', e.target.value)}
-                  placeholder="補充說明（可留空）"
-                  style={{ ...iStyle, padding: '4px 8px', fontSize: 12, color: '#9ca3af' }}
-                />
+        <div style={{ overflowY: 'auto', flex: 1, padding: '0 18px 16px' }}>
+          {local.map((it, idx) => {
+            const key = it.id || `new-${idx}`;
+            const isSaving = saving === key;
+            return (
+              <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 6, padding: '8px 0', borderBottom: '1px solid #f5f3f0' }}>
+                <button onClick={() => deleteRow(idx)} style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: '#d1c4b8', padding: 2, marginTop: 4, lineHeight: 0 }}>
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <input
+                    value={it.text} onChange={e => update(idx, 'text', e.target.value)}
+                    placeholder="項目名稱" autoFocus={idx === local.length - 1 && !it.id}
+                    onKeyDown={e => e.key === 'Enter' && saveRow(idx)}
+                    style={{ ...iStyle, padding: '6px 8px' }}
+                  />
+                  <input
+                    value={it.sub ?? ''} onChange={e => update(idx, 'sub', e.target.value)}
+                    placeholder="細項說明（可留空）"
+                    style={{ ...iStyle, padding: '4px 8px', fontSize: 12, color: '#9ca3af' }}
+                  />
+                </div>
+                <button
+                  onClick={() => saveRow(idx)}
+                  disabled={isSaving || !it.text.trim()}
+                  style={{ ...btnStyle(isSaving || !it.text.trim()), marginTop: 2 }}
+                >
+                  {isSaving ? '…' : it.id ? '儲存' : '新增'}
+                </button>
               </div>
-              <button onClick={() => remove(idx)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#c4a882', padding: '4px', marginTop: 2, flexShrink: 0 }}>
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth={2}>
-                  <polyline points="3 6 5 6 21 6"/>
-                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                  <path d="M10 11v6"/><path d="M14 11v6"/>
-                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                </svg>
-              </button>
-            </div>
-          ))}
-          <button onClick={add} style={{ width: '100%', padding: '10px 0', margin: '8px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, border: '1px dashed #c4a882', borderRadius: 8, background: 'none', cursor: 'pointer', fontSize: 12, color: '#c4a882', fontWeight: 500 }}>
+            );
+          })}
+          <button onClick={addRow} style={{ width: '100%', padding: '10px 0', margin: '10px 0 4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, border: '1px dashed #c4a882', borderRadius: 8, background: 'none', cursor: 'pointer', fontSize: 12, color: '#c4a882', fontWeight: 500 }}>
             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth={2}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             新增項目
           </button>
         </div>
-        {/* Footer */}
-        <div style={{ padding: '12px 18px', display: 'flex', gap: 8, justifyContent: 'flex-end', borderTop: '1px solid #f0ebe5', flexShrink: 0 }}>
-          <button onClick={onClose} style={{ padding: '8px 22px', borderRadius: 999, border: '1px solid #ece8e3', background: 'none', fontSize: 13, color: '#6b7280', cursor: 'pointer' }}>取消</button>
-          <button onClick={save} disabled={saving} style={{ padding: '8px 22px', borderRadius: 999, border: 'none', background: '#7d9baa', fontSize: 13, color: '#fff', cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>{saving ? '儲存中…' : '儲存'}</button>
+        <div style={{ padding: '12px 18px', borderTop: '1px solid #f0ebe5', flexShrink: 0 }}>
+          <button onClick={onClose} style={{ width: '100%', padding: '9px 0', borderRadius: 999, border: '1px solid #ece8e3', background: 'none', fontSize: 13, color: '#6b7280', cursor: 'pointer' }}>關閉</button>
         </div>
       </div>
     </div>

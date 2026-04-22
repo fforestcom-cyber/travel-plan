@@ -5,7 +5,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { uploadImage } from '../../lib/storage';
-import type { DayPlan, DaySection, ContentBlock, Step } from '../../types/dayPlan';
+import type { DayPlan, ContentBlock, Step } from '../../types/dayPlan';
 
 // ── 莫蘭迪色系 ───────────────────────────────────────────────────────
 const MORANDI_DOTS = ['#7d9baa', '#9eab96', '#c4a882', '#b09898', '#8c9daa', '#a89c8c'];
@@ -231,6 +231,7 @@ interface RefLink { text: string; href: string; }
 interface CardOverride {
   category?: string;
   name?: string;
+  location?: string;
   timeRange?: string;
   openHours?: string;
   transportTime?: string;
@@ -246,7 +247,7 @@ interface CardOverride {
 }
 interface CustomCard {
   id: string; dayNum: number; title: string; timeRange: string;
-  notes: string; order: number; category?: string;
+  notes: string; order: number; category?: string; location?: string;
   naverQuery?: string; googleQuery?: string;
   openHours?: string; transportTime?: string; cost?: string; supplement?: string; links?: RefLink[];
 }
@@ -341,13 +342,15 @@ const SectionPhotoGallery = ({ sectionId }: { sectionId: string }) => {
 
 // ── 從靜態資料轉換為初始 fields ─────────────────────────────────────
 interface EditFields {
-  category: string; name: string; timeRange: string;
+  category: string; name: string; location: string; timeRange: string;
   openHours: string; transportTime: string; cost: string;
   naverQuery: string; googleQuery: string;
   content: string; notes: string; links: RefLink[];
 }
 
-const sectionToInitFields = (section: DaySection): EditFields => {
+type SectionLike = { title: string; timeRange?: string; mapQuery?: string; blocks: ContentBlock[] };
+
+const sectionToInitFields = (section: SectionLike): EditFields => {
   const contentParts: string[] = [];
   const noteParts:   string[] = [];
   const links:       RefLink[] = [];
@@ -389,6 +392,7 @@ const sectionToInitFields = (section: DaySection): EditFields => {
   return {
     category: '',
     name: section.title,
+    location: '',
     timeRange: timePart.trim(),
     openHours: '',
     transportTime: transportPart.trim(),
@@ -401,14 +405,15 @@ const sectionToInitFields = (section: DaySection): EditFields => {
   };
 };
 
-const overrideToFields = (ov: CardOverride, section?: DaySection): EditFields => {
+const overrideToFields = (ov: CardOverride, section?: SectionLike): EditFields => {
   const base = section ? sectionToInitFields(section) : {
-    category: '', name: '', timeRange: '', openHours: '',
+    category: '', name: '', location: '', timeRange: '', openHours: '',
     transportTime: '', cost: '', naverQuery: '', googleQuery: '', content: '', notes: '', links: [] as RefLink[],
   };
   return {
     category:      ov.category      ?? base.category,
     name:          ov.name          ?? base.name,
+    location:      ov.location      ?? base.location,
     timeRange:     ov.timeRange     ?? base.timeRange,
     openHours:     ov.openHours     ?? base.openHours,
     transportTime: ov.transportTime ?? base.transportTime,
@@ -504,6 +509,13 @@ const EditPanel = ({
       <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         {label('名稱')}
         <input value={fields.name} onChange={e => set('name', e.target.value)} style={iStyle} />
+      </div>
+
+      {/* 位置 */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {label('位置')}
+        <input value={fields.location} onChange={e => set('location', e.target.value)}
+          placeholder="西面、海雲台、金海…" style={iStyle} />
       </div>
 
       {/* 時間 + 營業時間 */}
@@ -807,7 +819,7 @@ const OverrideDisplay = ({ ov, isChecklist = false }: { ov: CardOverride; isChec
 // ── 新增卡片 Modal ────────────────────────────────────────────────────
 const AddCardModal = ({ dayNum, nextOrder, onClose }: { dayNum: number; nextOrder: number; onClose: () => void; }) => {
   const initFields: EditFields = {
-    category: '', name: '', timeRange: '',
+    category: '', name: '', location: '', timeRange: '',
     openHours: '', transportTime: '', cost: '',
     naverQuery: '', googleQuery: '',
     content: '', notes: '', links: [],
@@ -817,6 +829,7 @@ const AddCardModal = ({ dayNum, nextOrder, onClose }: { dayNum: number; nextOrde
     await addDoc(CUSTOM_CARDS_COL, {
       dayNum,
       title:         fields.name,
+      location:      fields.location,
       timeRange:     fields.timeRange,
       category:      fields.category,
       naverQuery:    fields.naverQuery,
@@ -851,183 +864,165 @@ const AddCardModal = ({ dayNum, nextOrder, onClose }: { dayNum: number; nextOrde
   );
 };
 
-// ── SectionCard ────────────────────────────────────────────────────────
-const SectionCard = ({
-  section, displayNum, sectionId, override, dayNum, onEdit, onDelete, onMoveUp, onMoveDown,
+// ── 統一行程卡片 ──────────────────────────────────────────────────────────
+const PlanCard = ({
+  sectionId, title, category, location, timeRange, naverQuery, googleQuery, openHours,
+  section, override, initFields, onSave, onDelete, onMoveUp, onMoveDown, onEdit,
 }: {
-  section: DaySection;
-  displayNum: string;
   sectionId: string;
+  title: string; category: string; location: string; timeRange: string;
+  naverQuery: string; googleQuery: string; openHours: string;
+  section?: FirestoreSection;
   override?: CardOverride;
-  dayNum: number;
-  onEdit: (ctx: { initFields: EditFields; onSave: (f: EditFields) => Promise<void> }) => void;
+  initFields: EditFields;
+  onSave: (fields: EditFields) => Promise<void>;
   onDelete?: () => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
+  onEdit: (ctx: { initFields: EditFields; onSave: (f: EditFields) => Promise<void> }) => void;
 }) => {
-  const [open,      setOpen]      = useState(false);
+  const [open, setOpen]           = useState(false);
   const [linksOpen, setLinksOpen] = useState(false);
 
-  const contentBlocks  = section.blocks.filter(b => b.kind !== 'photo-ref');
-  const photoRefBlocks = section.blocks.filter(b => b.kind === 'photo-ref') as
-    Extract<import('../../types/dayPlan').ContentBlock, { kind: 'photo-ref' }>[];
-  const staticLinks  = photoRefBlocks.flatMap(ref => ref.links);
-  const isChecklist  = section.blocks.some(b => b.kind === 'checklist');
+  const catStyle = category ? CATEGORY_STYLE[category] : null;
+  const district = location || detectDistrict(naverQuery);
 
-  const displayTitle = override?.name || section.title;
-  const displayTime  = (override?.timeRange || section.timeRange).split('｜')[0];
-  const naverQ  = override?.naverQuery || override?.address || section.mapQuery || '';
-  const googleQ = override?.googleQuery || '';
-  const catStyle = override?.category ? CATEGORY_STYLE[override.category] : null;
-  const hasOverride = !!override?.name;
-  const district = detectDistrict(naverQ);
-  const openHours = override?.openHours || '';
-
-  const handleSave = async (fields: EditFields) => {
-    await setDoc(doc(db, 'cardOverrides', sectionId), { ...fields, dayNum, updatedAt: serverTimestamp() });
-  };
-
-  const initFields: EditFields = hasOverride
-    ? overrideToFields(override!, section)
-    : sectionToInitFields(section);
+  // section with no override → render native blocks; otherwise use OverrideDisplay
+  const showNativeBlocks = !!section && !override;
+  const contentBlocks = section ? section.blocks.filter(b => b.kind !== 'photo-ref') : [];
+  const photoRefBlocks = (section ? section.blocks.filter(b => b.kind === 'photo-ref') : []) as
+    Extract<ContentBlock, { kind: 'photo-ref' }>[];
+  const staticLinks = photoRefBlocks.flatMap(ref => ref.links);
 
   return (
     <div style={{ border: '1px solid #ece8e3', borderRadius: 'var(--radius-md)', background: '#fff', marginBottom: 10, overflow: 'hidden' }}>
-      {/* Header */}
       <div style={{ padding: '12px 14px 10px' }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-            {catStyle && (
-              <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 20, background: catStyle.bg, color: catStyle.color, flexShrink: 0 }}>
-                {override!.category}
-              </span>
-            )}
-            <button onClick={() => setOpen(!open)} style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600, color: '#374151', fontSize: 14, lineHeight: 1.4 }}>
-              {displayTitle}
-            </button>
-            <button onClick={() => setOpen(!open)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: '#9ca3af', flexShrink: 0, lineHeight: 0 }}>
-              <svg viewBox="0 0 24 24" style={{ width: 15, height: 15, display: 'block', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} fill="none" stroke="currentColor" strokeWidth={2}>
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </button>
-          </div>
-          {(district || openHours || displayTime) && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 7 }}>
-              {district && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: '#9eab96', fontWeight: 600 }}>
-                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth={2}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  {district}
-                </span>
-              )}
-              {(openHours || displayTime) && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 12, color: '#9ca3af' }}>
-                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                  {openHours || displayTime}
-                </span>
-              )}
-            </div>
+        {/* badge 左欄 + 名稱/位置 右欄 */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, marginBottom: 4 }}>
+          {catStyle && (
+            <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 20, background: catStyle.bg, color: catStyle.color, flexShrink: 0, marginTop: 2 }}>
+              {category}
+            </span>
           )}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {naverQ && (
-              <a href={`https://map.naver.com/p/search/${encodeURIComponent(naverQ)}`} target="_blank" rel="noopener noreferrer"
-                style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '5px 12px', borderRadius: 20, background: '#e8f5e9', color: '#1a7340', fontSize: 11, fontWeight: 600, textDecoration: 'none' }}>
-                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth={2}><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
-                Naver
-              </a>
-            )}
-            {googleQ && (
-              <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(googleQ)}`} target="_blank" rel="noopener noreferrer"
-                style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '5px 12px', borderRadius: 20, background: '#e8f0fe', color: '#1a56db', fontSize: 11, fontWeight: 600, textDecoration: 'none' }}>
-                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth={2}><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
-                Google
-              </a>
-            )}
-            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}>
-              {onMoveUp && (
-                <button onClick={onMoveUp} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, borderRadius: 6, border: 'none', background: 'none', color: '#9ca3af', cursor: 'pointer', flexShrink: 0 }}>
-                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="18 15 12 9 6 15"/></svg>
-                </button>
-              )}
-              {onMoveDown && (
-                <button onClick={onMoveDown} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, borderRadius: 6, border: 'none', background: 'none', color: '#9ca3af', cursor: 'pointer', flexShrink: 0 }}>
-                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="6 9 12 15 18 9"/></svg>
-                </button>
-              )}
-              {onDelete && (
-                <button
-                  onClick={onDelete}
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, borderRadius: 6, border: 'none', background: 'none', color: '#c4a882', cursor: 'pointer', flexShrink: 0 }}
-                >
-                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-                </button>
-              )}
-              <button onClick={() => onEdit({ initFields, onSave: handleSave })}
-                style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '3px 9px', borderRadius: 20, flexShrink: 0, background: 'none', border: '1px solid #ece8e3', color: '#9ca3af', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
-                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth={2}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                編輯
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+              <button onClick={() => setOpen(!open)} style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600, color: '#374151', fontSize: 14, lineHeight: 1.4 }}>
+                {title}
+              </button>
+              <button onClick={() => setOpen(!open)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: '#9ca3af', flexShrink: 0, lineHeight: 0 }}>
+                <svg viewBox="0 0 24 24" style={{ width: 15, height: 15, display: 'block', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} fill="none" stroke="currentColor" strokeWidth={2}>
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
               </button>
             </div>
+            {(district || openHours || timeRange) && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                {district && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: '#9eab96', fontWeight: 600 }}>
+                    <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth={2}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    {district}
+                  </span>
+                )}
+                {(openHours || timeRange) && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 12, color: '#9ca3af' }}>
+                    <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    {openHours || timeRange}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+        {/* 第三排：地圖連結 + 操作按鈕，不縮排 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {naverQuery && (
+            <a href={`https://map.naver.com/p/search/${encodeURIComponent(naverQuery)}`} target="_blank" rel="noopener noreferrer"
+              style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '5px 12px', borderRadius: 20, background: '#e8f5e9', color: '#1a7340', fontSize: 11, fontWeight: 600, textDecoration: 'none' }}>
+              <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth={2}><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+              Naver
+            </a>
+          )}
+          {googleQuery && (
+            <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(googleQuery)}`} target="_blank" rel="noopener noreferrer"
+              style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '5px 12px', borderRadius: 20, background: '#e8f0fe', color: '#1a56db', fontSize: 11, fontWeight: 600, textDecoration: 'none' }}>
+              <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth={2}><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+              Google
+            </a>
+          )}
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}>
+            {onMoveUp && (
+              <button onClick={onMoveUp} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, borderRadius: 6, border: 'none', background: 'none', color: '#9ca3af', cursor: 'pointer', flexShrink: 0 }}>
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="18 15 12 9 6 15"/></svg>
+              </button>
+            )}
+            {onMoveDown && (
+              <button onClick={onMoveDown} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, borderRadius: 6, border: 'none', background: 'none', color: '#9ca3af', cursor: 'pointer', flexShrink: 0 }}>
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+            )}
+            {onDelete && (
+              <button onClick={onDelete} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, borderRadius: 6, border: 'none', background: 'none', color: '#c4a882', cursor: 'pointer', flexShrink: 0 }}>
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+              </button>
+            )}
+            <button onClick={() => onEdit({ initFields, onSave })}
+              style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '3px 9px', borderRadius: 20, flexShrink: 0, background: 'none', border: '1px solid #ece8e3', color: '#9ca3af', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+              <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth={2}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              編輯
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Expanded content */}
       {open && (
         <div style={{ padding: '0 16px 16px' }}>
           <div style={{ borderTop: `1px solid ${MORANDI_LINE}`, paddingTop: 14 }}>
-          {hasOverride ? (
-            <OverrideDisplay ov={override!} isChecklist={isChecklist} />
-          ) : (
-            <>
-              {contentBlocks.map((block, i) => renderBlock(block, i))}
-
-              {/* 參考連結（static） */}
-              {staticLinks.length > 0 && (
-                <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${MORANDI_LINE}` }}>
-                  <button
-                    onClick={() => setLinksOpen(!linksOpen)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 6,
-                      fontSize: 11, fontWeight: 600, color: '#9ca3af',
-                      letterSpacing: '0.05em', background: 'none', border: 'none', cursor: 'pointer', width: '100%',
-                    }}
-                  >
-                    <svg viewBox="0 0 24 24" style={{ width: 13, height: 13 }} fill="none" stroke="currentColor" strokeWidth={2}>
-                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                    </svg>
-                    參考連結
-                    <svg viewBox="0 0 24 24" style={{
-                      width: 13, height: 13, marginLeft: 'auto',
-                      transform: linksOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s',
-                    }} fill="none" stroke="currentColor" strokeWidth={2}>
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                  </button>
-                  {linksOpen && (
-                    <ul style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {staticLinks.map((link, i) => {
-                        let site = '';
-                        try { site = new URL(link.href).hostname.replace('www.', ''); } catch {}
-                        return (
-                          <li key={i} style={{ display: 'flex', gap: 6 }}>
-                            <span style={{ fontSize: 10, color: '#c0b8b0', flexShrink: 0, marginTop: 1, minWidth: 16 }}>{i + 1}.</span>
-                            <div>
-                              <a href={link.href} target="_blank" rel="noopener noreferrer"
-                                style={{ fontSize: 12, color: '#7d9baa', textDecoration: 'underline', textUnderlineOffset: 2, lineHeight: 1.5 }}>
-                                {link.text}
-                              </a>
-                              {site && <span style={{ marginLeft: 4, fontSize: 10, color: '#c0b8b0' }}>{site}</span>}
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </div>
-              )}
-            </>
-          )}
+            {showNativeBlocks ? (
+              <>
+                {contentBlocks.map((block, i) => renderBlock(block, i))}
+                {staticLinks.length > 0 && (
+                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${MORANDI_LINE}` }}>
+                    <button
+                      onClick={() => setLinksOpen(!linksOpen)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: '#9ca3af', letterSpacing: '0.05em', background: 'none', border: 'none', cursor: 'pointer', width: '100%' }}
+                    >
+                      <svg viewBox="0 0 24 24" style={{ width: 13, height: 13 }} fill="none" stroke="currentColor" strokeWidth={2}>
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                      </svg>
+                      參考連結
+                      <svg viewBox="0 0 24 24" style={{ width: 13, height: 13, marginLeft: 'auto', transform: linksOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} fill="none" stroke="currentColor" strokeWidth={2}>
+                        <polyline points="6 9 12 15 18 9" />
+                      </svg>
+                    </button>
+                    {linksOpen && (
+                      <ul style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {staticLinks.map((link, i) => {
+                          let site = '';
+                          try { site = new URL(link.href).hostname.replace('www.', ''); } catch {}
+                          return (
+                            <li key={i} style={{ display: 'flex', gap: 6 }}>
+                              <span style={{ fontSize: 10, color: '#c0b8b0', flexShrink: 0, marginTop: 1, minWidth: 16 }}>{i + 1}.</span>
+                              <div>
+                                <a href={link.href} target="_blank" rel="noopener noreferrer"
+                                  style={{ fontSize: 12, color: '#7d9baa', textDecoration: 'underline', textUnderlineOffset: 2, lineHeight: 1.5 }}>
+                                  {link.text}
+                                </a>
+                                {site && <span style={{ marginLeft: 4, fontSize: 10, color: '#c0b8b0' }}>{site}</span>}
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </>
+            ) : override ? (
+              <OverrideDisplay ov={override} />
+            ) : (
+              <p style={{ fontSize: 13, color: '#c0b8b0', margin: 0 }}>（尚無內容）</p>
+            )}
           </div>
           <SectionPhotoGallery sectionId={sectionId} />
         </div>
@@ -1036,166 +1031,14 @@ const SectionCard = ({
   );
 };
 
-// ── 自訂卡片（用戶新增） ───────────────────────────────────────────────
-const CustomSectionCard = ({
-  card, displayNum, onEdit, onMoveUp, onMoveDown,
-}: {
-  card: CustomCard;
-  displayNum: string;
-  onEdit: (ctx: { initFields: EditFields; onSave: (f: EditFields) => Promise<void> }) => void;
-  onMoveUp?: () => void;
-  onMoveDown?: () => void;
-}) => {
-  const [open, setOpen] = useState(false);
-
-  const handleSave = async (fields: EditFields) => {
-    await setDoc(doc(db, 'customCards', card.id), {
-      dayNum: card.dayNum, order: card.order,
-      title:         fields.name,
-      timeRange:     fields.timeRange,
-      category:      fields.category,
-      naverQuery:    fields.naverQuery,
-      googleQuery:   fields.googleQuery,
-      notes:         fields.content,
-      openHours:     fields.openHours,
-      transportTime: fields.transportTime,
-      cost:          fields.cost,
-      supplement:    fields.notes,
-      links:         fields.links,
-      updatedAt:     serverTimestamp(),
-    });
-  };
-
-  const initFields: EditFields = {
-    category:      card.category      ?? '',
-    name:          card.title,
-    timeRange:     card.timeRange,
-    openHours:     card.openHours     ?? '',
-    transportTime: card.transportTime ?? '',
-    cost:          card.cost          ?? '',
-    naverQuery:    card.naverQuery    ?? '',
-    googleQuery:   card.googleQuery   ?? '',
-    content:       card.notes,
-    notes:         card.supplement    ?? '',
-    links:         card.links         ?? [],
-  };
-
-  const catStyle = card.category ? CATEGORY_STYLE[card.category] : null;
-  const district = detectDistrict(card.naverQuery ?? '');
-
-  return (
-    <div style={{
-      border: '1px solid #ece8e3',
-      borderRadius: 'var(--radius-md)',
-      background: '#fff',
-      marginBottom: 10, overflow: 'hidden',
-    }}>
-      <div style={{ padding: '12px 14px 10px' }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-            {catStyle && (
-              <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 20, background: catStyle.bg, color: catStyle.color, flexShrink: 0 }}>
-                {card.category}
-              </span>
-            )}
-            <button onClick={() => setOpen(!open)} style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600, color: '#374151', fontSize: 14, lineHeight: 1.4 }}>
-              {card.title}
-            </button>
-            <button onClick={() => setOpen(!open)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: '#9ca3af', flexShrink: 0, lineHeight: 0 }}>
-              <svg viewBox="0 0 24 24" style={{ width: 15, height: 15, display: 'block', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} fill="none" stroke="currentColor" strokeWidth={2}>
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </button>
-          </div>
-          {(district || card.timeRange) && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 7 }}>
-              {district && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: '#9eab96', fontWeight: 600 }}>
-                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth={2}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  {district}
-                </span>
-              )}
-              {card.timeRange && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 12, color: '#9ca3af' }}>
-                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                  {card.timeRange}
-                </span>
-              )}
-            </div>
-          )}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {card.naverQuery && (
-              <a href={`https://map.naver.com/p/search/${encodeURIComponent(card.naverQuery)}`} target="_blank" rel="noopener noreferrer"
-                style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '5px 12px', borderRadius: 20, background: '#e8f5e9', color: '#1a7340', fontSize: 11, fontWeight: 600, textDecoration: 'none' }}>
-                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth={2}><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
-                Naver
-              </a>
-            )}
-            {card.googleQuery && (
-              <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.googleQuery)}`} target="_blank" rel="noopener noreferrer"
-                style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '5px 12px', borderRadius: 20, background: '#e8f0fe', color: '#1a56db', fontSize: 11, fontWeight: 600, textDecoration: 'none' }}>
-                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth={2}><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
-                Google
-              </a>
-            )}
-            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}>
-              {onMoveUp && (
-                <button onClick={onMoveUp} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, borderRadius: 6, border: 'none', background: 'none', color: '#9ca3af', cursor: 'pointer', flexShrink: 0 }}>
-                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="18 15 12 9 6 15"/></svg>
-                </button>
-              )}
-              {onMoveDown && (
-                <button onClick={onMoveDown} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, borderRadius: 6, border: 'none', background: 'none', color: '#9ca3af', cursor: 'pointer', flexShrink: 0 }}>
-                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="6 9 12 15 18 9"/></svg>
-                </button>
-              )}
-              <button
-                onClick={() => window.confirm(`確定刪除「${card.title}」？`) && deleteDoc(doc(db, 'customCards', card.id))}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, borderRadius: 6, border: 'none', background: 'none', color: '#c4a882', cursor: 'pointer', flexShrink: 0 }}
-              >
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-              </button>
-              <button onClick={() => onEdit({ initFields, onSave: handleSave })}
-                style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '3px 9px', borderRadius: 20, flexShrink: 0, background: 'none', border: '1px solid #ece8e3', color: '#9ca3af', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
-                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth={2}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                編輯
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {open && (
-        <div style={{ padding: '0 16px 16px' }}>
-          <div style={{ borderTop: `1px solid ${MORANDI_LINE}`, paddingTop: 14 }}>
-            {(card.notes || card.openHours || card.transportTime || card.cost || card.supplement || card.links?.length) ? (
-              <OverrideDisplay ov={{
-                content:       card.notes,
-                openHours:     card.openHours,
-                transportTime: card.transportTime,
-                cost:          card.cost,
-                notes:         card.supplement,
-                links:         card.links,
-              }} />
-            ) : (
-              <p style={{ fontSize: 13, color: '#c0b8b0', margin: 0 }}>（尚無內容）</p>
-            )}
-          </div>
-          <SectionPhotoGallery sectionId={`customCard-${card.id}`} />
-        </div>
-      )}
-    </div>
-  );
-};
-
 // ── DayPlanView ────────────────────────────────────────────────────────
 const DayPlanView = ({ plan }: { plan: DayPlan }) => {
-  const [overrides,    setOverrides]    = useState<Record<string, CardOverride>>({});
-  const [customCards,  setCustomCards]  = useState<CustomCard[]>([]);
-  const [fsections,    setFsections]    = useState<FirestoreSection[] | null>(null);
-  const [seeding,      setSeeding]      = useState(false);
-  const [addingCard, setAddingCard] = useState(false);
-  const [editCtx,    setEditCtx]    = useState<{
+  const [overrides,   setOverrides]   = useState<Record<string, CardOverride>>({});
+  const [customCards, setCustomCards] = useState<CustomCard[]>([]);
+  const [fsections,   setFsections]   = useState<FirestoreSection[] | null>(null);
+  const [seeding,     setSeeding]     = useState(false);
+  const [addingCard,  setAddingCard]  = useState(false);
+  const [editCtx,     setEditCtx]     = useState<{
     initFields: EditFields;
     onSave: (fields: EditFields) => Promise<void>;
   } | null>(null);
@@ -1218,6 +1061,7 @@ const DayPlanView = ({ plan }: { plan: DayPlan }) => {
             id:            d.id,
             dayNum:        d.data().dayNum        ?? plan.day,
             title:         d.data().title         ?? '',
+            location:      d.data().location      ?? '',
             timeRange:     d.data().timeRange     ?? '',
             notes:         d.data().notes         ?? '',
             order:         d.data().order         ?? 0,
@@ -1264,29 +1108,115 @@ const DayPlanView = ({ plan }: { plan: DayPlan }) => {
     }
   };
 
-  const moveSection = async (idx: number, dir: -1 | 1) => {
-    if (!fsections) return;
+  // ── 合併兩個集合，按 order 排序 ──
+  type CardEntry = {
+    key: string; id: string; source: 'section' | 'custom'; order: number;
+    sectionId: string; title: string; category: string; location: string; timeRange: string;
+    naverQuery: string; googleQuery: string; openHours: string;
+    section?: FirestoreSection; override?: CardOverride;
+    initFields: EditFields;
+    onSave: (fields: EditFields) => Promise<void>;
+    onDelete?: () => void;
+  };
+
+  const allCards: CardEntry[] = [];
+
+  if (fsections) {
+    for (const section of fsections) {
+      const sectionId = `day${plan.day}-s${section.num}`;
+      const ov = overrides[sectionId];
+      if (ov?.deleted) continue;
+      allCards.push({
+        key: section.id, id: section.id, source: 'section', order: section.order,
+        sectionId,
+        title:       ov?.name      || section.title,
+        category:    ov?.category  || '',
+        location:    ov?.location  || '',
+        timeRange:   (ov?.timeRange || (section.timeRange ?? '')).split('｜')[0],
+        naverQuery:  ov?.naverQuery || ov?.address || section.mapQuery || '',
+        googleQuery: ov?.googleQuery || '',
+        openHours:   ov?.openHours  || '',
+        section,
+        override: ov,
+        initFields: ov ? overrideToFields(ov, section) : sectionToInitFields(section),
+        onSave: async (fields: EditFields) => {
+          await setDoc(doc(db, 'cardOverrides', sectionId), { ...fields, dayNum: plan.day, updatedAt: serverTimestamp() });
+        },
+        onDelete: async () => {
+          if (!window.confirm(`確定刪除「${ov?.name || section.title}」？`)) return;
+          await deleteDoc(doc(db, 'sectionCards', section.id));
+        },
+      });
+    }
+  }
+
+  for (const card of customCards) {
+    allCards.push({
+      key: card.id, id: card.id, source: 'custom', order: card.order,
+      sectionId:   `customCard-${card.id}`,
+      title:       card.title,
+      category:    card.category      || '',
+      location:    card.location      || '',
+      timeRange:   card.timeRange,
+      naverQuery:  card.naverQuery    || '',
+      googleQuery: card.googleQuery   || '',
+      openHours:   card.openHours     || '',
+      override: {
+        content:       card.notes,
+        openHours:     card.openHours,
+        transportTime: card.transportTime,
+        cost:          card.cost,
+        notes:         card.supplement,
+        links:         card.links,
+      },
+      initFields: {
+        category:      card.category      || '',
+        name:          card.title,
+        location:      card.location      || '',
+        timeRange:     card.timeRange,
+        openHours:     card.openHours     || '',
+        transportTime: card.transportTime || '',
+        cost:          card.cost          || '',
+        naverQuery:    card.naverQuery    || '',
+        googleQuery:   card.googleQuery   || '',
+        content:       card.notes,
+        notes:         card.supplement    || '',
+        links:         card.links         || [],
+      },
+      onSave: async (fields: EditFields) => {
+        await setDoc(doc(db, 'customCards', card.id), {
+          dayNum: card.dayNum, order: card.order,
+          title: fields.name, location: fields.location,
+          timeRange: fields.timeRange,
+          category: fields.category, naverQuery: fields.naverQuery,
+          googleQuery: fields.googleQuery, notes: fields.content,
+          openHours: fields.openHours, transportTime: fields.transportTime,
+          cost: fields.cost, supplement: fields.notes, links: fields.links,
+          updatedAt: serverTimestamp(),
+        });
+      },
+      onDelete: async () => {
+        if (window.confirm(`確定刪除「${card.title}」？`))
+          await deleteDoc(doc(db, 'customCards', card.id));
+      },
+    });
+  }
+
+  allCards.sort((a, b) => a.order - b.order);
+
+  const moveCard = async (idx: number, dir: -1 | 1) => {
     const swapIdx = idx + dir;
-    if (swapIdx < 0 || swapIdx >= fsections.length) return;
-    const a = fsections[idx], b = fsections[swapIdx];
+    if (swapIdx < 0 || swapIdx >= allCards.length) return;
+    const a = allCards[idx], b = allCards[swapIdx];
+    const colA = a.source === 'section' ? 'sectionCards' : 'customCards';
+    const colB = b.source === 'section' ? 'sectionCards' : 'customCards';
     await Promise.all([
-      updateDoc(doc(db, 'sectionCards', a.id), { order: b.order }),
-      updateDoc(doc(db, 'sectionCards', b.id), { order: a.order }),
+      updateDoc(doc(db, colA, a.id), { order: b.order }),
+      updateDoc(doc(db, colB, b.id), { order: a.order }),
     ]);
   };
 
-  const moveCustomCard = async (idx: number, dir: -1 | 1) => {
-    const sorted = [...customCards].sort((a, b) => a.order - b.order);
-    const swapIdx = idx + dir;
-    if (swapIdx < 0 || swapIdx >= sorted.length) return;
-    const a = sorted[idx], b = sorted[swapIdx];
-    await Promise.all([
-      updateDoc(doc(db, 'customCards', a.id), { order: b.order }),
-      updateDoc(doc(db, 'customCards', b.id), { order: a.order }),
-    ]);
-  };
-
-  const nextOrder = customCards.length > 0 ? Math.max(...customCards.map(c => c.order)) + 1 : 100;
+  const nextOrder = allCards.length > 0 ? Math.max(...allCards.map(c => c.order)) + 1 : 100;
 
   return (
     <div>
@@ -1295,18 +1225,6 @@ const DayPlanView = ({ plan }: { plan: DayPlan }) => {
         <h3 style={{ fontSize: 15, fontWeight: 700, color: '#374151', margin: 0 }}>今日行程</h3>
       </div>
 
-      {[...customCards].sort((a, b) => a.order - b.order).map((card, idx, arr) => (
-        <CustomSectionCard
-          key={card.id}
-          card={card}
-          displayNum={card.order.toString().padStart(2, '0')}
-          onEdit={setEditCtx}
-          onMoveUp={idx > 0 ? () => moveCustomCard(idx, -1) : undefined}
-          onMoveDown={idx < arr.length - 1 ? () => moveCustomCard(idx, 1) : undefined}
-        />
-      ))}
-
-      {/* 尚未初始化：顯示初始化按鈕 */}
       {fsections !== null && fsections.length === 0 && plan.sections.length > 0 && (
         <button
           onClick={seedSections}
@@ -1326,29 +1244,27 @@ const DayPlanView = ({ plan }: { plan: DayPlan }) => {
         </button>
       )}
 
-      {/* Firestore 行程卡片 */}
-      {(fsections ?? []).map((section, idx, arr) => {
-        const sectionId = `day${plan.day}-s${section.num}`;
-        if (overrides[sectionId]?.deleted) return null;
-        const handleDelete = async () => {
-          if (!window.confirm(`確定刪除「${section.title}」？`)) return;
-          await deleteDoc(doc(db, 'sectionCards', section.id));
-        };
-        return (
-          <SectionCard
-            key={section.id}
-            section={section}
-            displayNum={section.num}
-            sectionId={sectionId}
-            override={overrides[sectionId]}
-            dayNum={plan.day}
-            onEdit={setEditCtx}
-            onDelete={handleDelete}
-            onMoveUp={idx > 0 ? () => moveSection(idx, -1) : undefined}
-            onMoveDown={idx < arr.length - 1 ? () => moveSection(idx, 1) : undefined}
-          />
-        );
-      })}
+      {allCards.map(({ key, sectionId, title, category, location, timeRange, naverQuery, googleQuery, openHours, section, override, initFields, onSave, onDelete }, idx, arr) => (
+        <PlanCard
+          key={key}
+          sectionId={sectionId}
+          title={title}
+          category={category}
+          location={location}
+          timeRange={timeRange}
+          naverQuery={naverQuery}
+          googleQuery={googleQuery}
+          openHours={openHours}
+          section={section}
+          override={override}
+          initFields={initFields}
+          onSave={onSave}
+          onDelete={onDelete}
+          onEdit={setEditCtx}
+          onMoveUp={idx > 0 ? () => moveCard(idx, -1) : undefined}
+          onMoveDown={idx < arr.length - 1 ? () => moveCard(idx, 1) : undefined}
+        />
+      ))}
 
       {editCtx && (
         <div
