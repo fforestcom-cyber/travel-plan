@@ -1595,6 +1595,9 @@
   font-family: var(--font-base);
   transition: all 0.2s;
 }
+/* pill 圓角（台幣分類用） */
+.expense-form-btn--pill { border-radius: 9999px; }
+
 /* 分類按鈕 選中 */
 .expense-form-btn.is-active {
   background: #7D9BAA;
@@ -1616,10 +1619,12 @@
 /* 取消按鈕（固定樣式，無 is-active） */
 .expense-form-cancel {
   padding: 10px 16px;
+  border-radius: 9999px;
 }
 /* + 新增按鈕 */
 .expense-form-submit {
   padding: 10px 16px;
+  border-radius: 9999px;
   background: #7D9BAA;
   color: white;
   border-color: #7D9BAA;
@@ -1657,6 +1662,167 @@
 }
 .expense-edit-form .expense-form-input::placeholder {
   color: var(--color-text-light);
+}
+
+/* 每日平均 */
+.expense-total__perday {
+  font-size: var(--text-xs);
+  color: var(--color-text-light);
+  margin-top: 2px;
+  margin-bottom: 2px;
+  font-family: var(--font-number);
+}
+
+/* 總花費卡片：細項分拆列 */
+.expense-total__breakdown {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: var(--text-xs);
+  color: var(--color-text-light);
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.expense-total__breakdown > span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.expense-total__breakdown-label {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.expense-total__breakdown-val {
+  font-family: var(--font-number);
+}
+.expense-total__breakdown-sep {
+  color: var(--color-text-light);
+  font-weight: 600;
+}
+
+/* 台幣 / 韓幣分隔線 */
+.expense-section-divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 1.25rem 0;
+}
+.expense-section-divider--thick {
+  height: 6px;
+  background: #8FA3B1;
+  border-radius: 9999px;
+  margin: 0.75rem 1rem;
+}
+
+/* KRW 記帳明細單一卡片列表 */
+.krw-list-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+.krw-list-card .expense-row {
+  background: none;
+  border: none;
+  border-radius: 0;
+  margin-bottom: 0;
+}
+.krw-list-card__divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 0 1rem;
+}
+.krw-list-card__edit {
+  padding: 0 1rem 14px;
+  background: #F8FAFB;
+  border-top: 1px solid var(--color-border);
+}
+.krw-list-card__edit .expense-form-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #D8E3E9;
+  border-radius: 0;
+  padding: 8px 4px;
+  font-size: 15px;
+  color: var(--color-text-main);
+  outline: none;
+}
+.krw-list-card__edit .expense-form-input:focus {
+  border-bottom-color: var(--color-primary);
+}
+.krw-list-card__edit .expense-form-input::placeholder {
+  color: var(--color-text-light);
+}
+.krw-list-card__edit .expense-form-row {
+  margin-top: 10px;
+}
+
+/* 台幣花費單一卡片列表 */
+.twd-list-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+.twd-list-card__divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 0 1rem;
+}
+.twd-list-card__row {
+  padding: 12px 1rem;
+}
+.twd-list-card__edit {
+  padding: 0 1rem 14px;
+  background: #F8FAFB;
+  border-top: 1px solid var(--color-border);
+}
+.twd-list-card__edit .expense-form-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #D8E3E9;
+  border-radius: 0;
+  padding: 8px 4px;
+  font-size: 15px;
+  color: var(--color-text-main);
+  outline: none;
+}
+.twd-list-card__edit .expense-form-input:focus {
+  border-bottom-color: var(--color-primary);
+}
+.twd-list-card__edit .expense-form-input::placeholder {
+  color: var(--color-text-light);
+}
+.twd-list-card__edit .expense-form-row {
+  margin-top: 10px;
+}
+
+/* 台幣區塊收放 toggle */
+.twd-section-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: var(--color-text-main);
+  font-family: var(--font-base);
+}
+.twd-section-toggle__badge {
+  font-size: 12px;
+  font-family: var(--font-number);
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  border-radius: 6px;
+  padding: 1px 7px;
+  font-weight: 600;
 }
 
 /* note card img（template 已有，確保 max-width） */

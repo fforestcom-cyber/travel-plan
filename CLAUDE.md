@@ -8,7 +8,7 @@
 - **樣式**：Tailwind CSS 3.4（PostCSS + Autoprefixer）
 - **後端/資料庫**：Firebase 12
 - **測試**：Jest + React Testing Library
-- **專案路徑**：`D:\ClaudeCode\korea-travel`
+- **專案路徑**：`C:\Users\USER\Desktop\claude code\korea-travel`
 
 ---
 
@@ -33,6 +33,7 @@ src/
 ├── index.tsx / index.css    # 進入點
 ├── components/
 │   ├── Navbar.tsx           # 頂部導覽列
+│   ├── TaxiGuide.tsx        # 計程車叫車備查指南（靜態，含點擊複製韓文地址）
 │   ├── home/
 │   │   └── WeatherCard.tsx  # 首頁天氣卡片元件
 │   └── layout/
@@ -97,7 +98,7 @@ REACT_APP_FIREBASE_APP_ID=
 | 行程 | `SchedulePage.tsx` | 5 天行程，使用 `DayPlanView` 顯示每日 |
 | 清單 | `ChecklistPage.tsx` | 行前準備勾選清單 |
 | 費用 | `ExpensePage.tsx` | 費用記錄與統計 |
-| 筆記 | `NotesPage.tsx` | 自由格式旅遊筆記 |
+| 筆記 | `NotesPage.tsx` | 計程車指南（`TaxiGuide`）＋自由格式旅遊筆記 |
 
 ---
 
@@ -118,6 +119,25 @@ REACT_APP_FIREBASE_APP_ID=
 - **樣式**：使用 Tailwind CSS utility class，避免自訂 CSS（除非必要）
 - **資料層**：元件不直接呼叫 Firebase，一律透過 `storage.ts`
 - **不修改的檔案**：`.env`、`firebase.ts`（除非變更 Firebase 專案）
+
+---
+
+## TaxiGuide 元件說明
+
+`src/components/TaxiGuide.tsx` 是純靜態元件（無 Firebase），放在旅記頁（`NotesPage`）最頂部。
+
+**結構（由上到下）：**
+1. 收折 toggle header
+2. 叫車 App 比較（Uber vs k.ride）
+3. 最佳叫車策略
+4. 各日目的地（Day 1–5，每日可展開）
+   - 每筆行程顯示：行程編號 badge ＋ 中文路線（小字輔助）
+   - 韓文地址大字呈現，**點擊整塊複製**，可直接貼進 Naver Map
+5. 叫車實用技巧（2 欄格線）
+
+**資料修改位置：**
+- `DAYS` 陣列：各日行程與韓文地址
+- `TIPS` 陣列：叫車技巧內容（支援 HTML `<b>` / `<br>`）
 
 ---
 
