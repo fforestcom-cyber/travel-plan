@@ -572,11 +572,14 @@ const ChecklistCard = () => {
 /* ── 首頁 ─────────────────────────────────────────────── */
 const HomePage = () => (
   <>
-    <div className="page-trip-header">
-      <div className="page-trip-header__title">{TRIP_INFO.title}</div>
-      <div className="page-trip-header__date">
-        <svg viewBox="0 0 24 24" style={{ width: 13, height: 13 }}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        {TRIP_INFO.dateRange}
+    <div style={{ position: 'relative', borderBottom: '1px solid var(--color-border)', marginBottom: '1.25rem' }}>
+      <img src="/banner_color.png" alt="banner" style={{ width: '100%', display: 'block' }} />
+      <div className="page-trip-header" style={{ position: 'absolute', inset: 0, background: 'transparent', border: 'none', marginBottom: 0 }}>
+        <div className="page-trip-header__title" style={{ color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.35)' }}>{TRIP_INFO.title}</div>
+        <div className="page-trip-header__date" style={{ color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>
+          <svg viewBox="0 0 24 24" style={{ width: 13, height: 13 }}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          {TRIP_INFO.dateRange}
+        </div>
       </div>
     </div>
     <div className="section-px">
