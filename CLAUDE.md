@@ -90,6 +90,7 @@ scripts/
 | `expenses`, `twd_expenses` | 任何登入用戶（協作） |
 | `checklists` | 任何登入用戶（協作） |
 | `notes` | 任何登入用戶（協作） |
+| `shoppingItems` | 僅 `abc022778@gmail.com` |
 | `checklistItems`（行程頁）及其他 | 僅 `abc022778@gmail.com` |
 
 ```
@@ -109,9 +110,9 @@ REACT_APP_FIREBASE_APP_ID=
 |------|------|------|
 | 首頁 | `HomePage.tsx` | 天氣卡片、旅程概覽 |
 | 行程 | `SchedulePage.tsx` | 5 天行程，使用 `DayPlanView` 顯示每日 |
-| 清單 | `ChecklistPage.tsx` | 行前準備勾選清單 |
+| 清單 | `ChecklistPage.tsx` | 韓國購物清單（圖片卡片格、血條統計、勾選機制） |
 | 費用 | `ExpensePage.tsx` | 費用記錄與統計 |
-| 筆記 | `NotesPage.tsx` | `TaxiGuide`、`CatchTableGuide`、`ToiletGuide` ＋自由格式旅遊筆記 |
+| 筆記 | `NotesPage.tsx` | `TaxiGuide`、`CatchTableGuide`、`ToiletGuide` ＋自由格式旅遊筆記（含標題、可點擊 URL） |
 
 ---
 
@@ -178,6 +179,62 @@ REACT_APP_FIREBASE_APP_ID=
 ## App.tsx 登入流程
 
 `LoginScreen` 元件接受 `loading` prop，登入按鈕在登入進行中會 `disabled`，防止重複點擊。`App` 元件使用 `loggingIn` state 追蹤登入狀態。
+
+---
+
+## ChecklistPage 說明
+
+`src/pages/ChecklistPage.tsx` 是購物清單頁，資料存於 Firestore `shoppingItems` collection。
+
+**資料結構（ShoppingItem）：**
+```ts
+{ id, name, store, imageUrl, bought, createdAt }
+```
+
+**店家清單（STORES）與顏色（STORE_COLOR）：**
+Olive Young（磚灰紅）、藥局（鼠尾草綠）、大創 Daiso（石板藍）、超市（赭土橙）、便利商店（莫蘭迪藍）、釜山伴手禮（薰衣草紫）、其他。
+
+**IMPORT_SEED：**
+元件內硬編碼 57 筆商品資料（28 筆 Olive Young 含 Cloudinary 圖片 URL、29 筆其他店家無圖）。點擊「清空並重新匯入」按鈕可重置所有資料。
+
+**圖片：**
+- Olive Young 商品圖片已上傳至 Cloudinary，路徑：`korea-travel/shopping/`
+- 無圖片的卡片可點擊圖片區域上傳圖片（使用 `uploadImage` from `lib/storage.ts`），上傳後自動更新 Firestore
+
+**版面：**
+- 上方：各店家血條統計（彩色圓點 + 店名 + 已買/總數 + 進度條），可點選篩選
+- 中間：全部 / 未買 / 已買 篩選切換
+- 下方：2 欄卡片格（白底、`radius-md` 圓角、1:1 圖片、checkbox + 商品名 + 店家標示）
+
+---
+
+## NotesPage 旅遊筆記說明
+
+`src/pages/NotesPage.tsx` 自由格式筆記，資料存於 Firestore `notes` collection。
+
+**Note 型別：**
+```ts
+{ id, title, text, createdAt }
+```
+
+- 標題欄位（`title`）獨立顯示於卡片頂部
+- 內文中的 URL（`https://...`）自動渲染為可點擊連結（`renderWithLinks` helper）
+- 長網址透過 `overflow-wrap: break-word` 防止版面爆版
+
+---
+
+## Cloudinary 說明
+
+- Cloud Name：`dzflsgpjq`
+- Upload Preset：`korea-travel`（unsigned，前端可直接上傳）
+- 購物清單圖片路徑：`korea-travel/shopping/`
+- `uploadImage(file, folder)` 函式在 `src/lib/storage.ts`
+
+---
+
+## scripts/
+
+- `import-shopping.js`：一次性匯入腳本（參考用）。可上傳 base64 圖片至 Cloudinary，但無法從 Node.js 寫入 Firestore（需 Google Auth Token），實際匯入改由 React App 內的 `clearAndImport` 函式執行。
 
 ---
 
