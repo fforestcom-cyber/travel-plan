@@ -15,6 +15,7 @@ type DotColor = 'yellow' | 'green' | 'blue';
 
 interface Note {
   id: string;
+  title: string;
   text: string;
   imageUrl: string;
   dotColor: DotColor;
@@ -34,12 +35,26 @@ const formatTs = (ts: Timestamp | null): string => {
   return `${m}月${day}日 ${hh}:${mm}`;
 };
 
+const URL_RE = /(https?:\/\/[^\s]+)/g;
+
+const renderWithLinks = (text: string) =>
+  text.split(URL_RE).map((part, i) =>
+    /^https?:\/\//.test(part) ? (
+      <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="note-link">
+        {part}
+      </a>
+    ) : (
+      part
+    )
+  );
+
 const NOTES_COL = collection(db, 'notes');
 
-/* ── ChecklistPage ──────────────────────────────────────────────────── */
+/* ── NotesPage ──────────────────────────────────────────────────── */
 const NotesPage = () => {
   const [notes, setNotes]         = useState<Note[]>([]);
   const [loading, setLoading]     = useState(true);
+  const [titleDraft, setTitleDraft] = useState('');
   const [draft, setDraft]         = useState('');
   const [pendingImg, setPendingImg] = useState<string>('');
   const [pendingFile, setPendingFile] = useState<File | null>(null);
@@ -48,14 +63,15 @@ const NotesPage = () => {
   const fileInputRef              = useRef<HTMLInputElement>(null);
   const colorIdx                  = useRef(0);
 
-  const [editingId, setEditingId]         = useState<string | null>(null);
-  const [editDraft, setEditDraft]         = useState('');
-  const [editPendingImg, setEditPendingImg] = useState('');
+  const [editingId, setEditingId]             = useState<string | null>(null);
+  const [editTitleDraft, setEditTitleDraft]   = useState('');
+  const [editDraft, setEditDraft]             = useState('');
+  const [editPendingImg, setEditPendingImg]   = useState('');
   const [editPendingFile, setEditPendingFile] = useState<File | null>(null);
-  const [editKeepImg, setEditKeepImg]     = useState(true);
-  const [editUploading, setEditUploading] = useState(false);
-  const [editSaving, setEditSaving]       = useState(false);
-  const editFileInputRef                  = useRef<HTMLInputElement>(null);
+  const [editKeepImg, setEditKeepImg]         = useState(true);
+  const [editUploading, setEditUploading]     = useState(false);
+  const [editSaving, setEditSaving]           = useState(false);
+  const editFileInputRef                      = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const q = query(NOTES_COL, orderBy('createdAt', 'desc'));
@@ -67,6 +83,7 @@ const NotesPage = () => {
             const data = d.data();
             return {
               id:        d.id,
+              title:     data.title     ?? '',
               text:      data.text      ?? '',
               imageUrl:  data.imageUrl  ?? '',
               dotColor:  data.dotColor  ?? 'blue',
@@ -109,12 +126,14 @@ const NotesPage = () => {
       colorIdx.current += 1;
 
       await addDoc(NOTES_COL, {
+        title: titleDraft.trim(),
         text,
         imageUrl,
         dotColor,
         createdAt: serverTimestamp(),
       });
 
+      setTitleDraft('');
       setDraft('');
       setPendingImg('');
       setPendingFile(null);
@@ -143,6 +162,7 @@ const NotesPage = () => {
 
   const startEdit = (note: Note) => {
     setEditingId(note.id);
+    setEditTitleDraft(note.title);
     setEditDraft(note.text);
     setEditPendingImg('');
     setEditPendingFile(null);
@@ -151,6 +171,7 @@ const NotesPage = () => {
 
   const cancelEdit = () => {
     setEditingId(null);
+    setEditTitleDraft('');
     setEditDraft('');
     setEditPendingImg('');
     setEditPendingFile(null);
@@ -177,8 +198,13 @@ const NotesPage = () => {
         imageUrl = result.url;
         setEditUploading(false);
       }
-      await updateDoc(doc(db, 'notes', note.id), { text, imageUrl });
+      await updateDoc(doc(db, 'notes', note.id), {
+        title: editTitleDraft.trim(),
+        text,
+        imageUrl,
+      });
       setEditingId(null);
+      setEditTitleDraft('');
       setEditDraft('');
       setEditPendingImg('');
       setEditPendingFile(null);
@@ -215,6 +241,13 @@ const NotesPage = () => {
         <ToiletGuide />
 
         <div className="note-compose mb-6">
+          <input
+            type="text"
+            className="note-compose__title-input"
+            placeholder="標題（選填）"
+            value={titleDraft}
+            onChange={(e) => setTitleDraft(e.target.value)}
+          />
           <textarea
             placeholder="有什麼想記下來的嗎？行前提醒、購物清單、突發事項…"
             value={draft}
@@ -312,6 +345,25 @@ const NotesPage = () => {
 
               {editingId === note.id ? (
                 <>
+                  <input
+                    type="text"
+                    value={editTitleDraft}
+                    onChange={(e) => setEditTitleDraft(e.target.value)}
+                    placeholder="標題（選填）"
+                    style={{
+                      width: '100%',
+                      background: 'var(--color-bg-input)',
+                      borderRadius: 'var(--radius-md)',
+                      padding: '8px 12px',
+                      border: 'none',
+                      fontSize: 'var(--text-sm)',
+                      fontWeight: 600,
+                      color: 'var(--color-text-main)',
+                      outline: 'none',
+                      marginBottom: 8,
+                      fontFamily: 'inherit',
+                    }}
+                  />
                   <textarea
                     value={editDraft}
                     onChange={(e) => setEditDraft(e.target.value)}
@@ -409,7 +461,8 @@ const NotesPage = () => {
                 </>
               ) : (
                 <>
-                  <p className="note-card__text">{note.text}</p>
+                  {note.title && <p className="note-card__title">{note.title}</p>}
+                  <p className="note-card__text">{renderWithLinks(note.text)}</p>
                   {note.imageUrl && (
                     <img src={note.imageUrl} alt="清單附圖" className="note-card__img" />
                   )}

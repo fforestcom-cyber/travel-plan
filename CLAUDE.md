@@ -8,19 +8,23 @@
 - **樣式**：Tailwind CSS 3.4（PostCSS + Autoprefixer）
 - **後端/資料庫**：Firebase 12
 - **測試**：Jest + React Testing Library
-- **專案路徑**：`C:\Users\USER\Desktop\claude code\korea-travel`
+- **專案路徑**：`D:\claudecode\korea-travel`
+- **線上網址**：https://korea-travel-751da.web.app
 
 ---
 
 ## 常用指令
 
 ```bash
-npm start                  # 啟動開發環境（等同 npm run dev）
-npm run dev                # 啟動開發環境
-npm run build              # 建置正式版本
-npm test                   # 執行測試（Jest + React Testing Library）
-npm run eject              # ⚠️ 不可逆操作，請勿執行
+npm start                              # 啟動開發環境（等同 npm run dev）
+npm run dev                            # 啟動開發環境
+DISABLE_ESLINT_PLUGIN=true npm run build  # 建置正式版本（需加此環境變數，避免 ESLint 路徑大小寫衝突）
+npm test                               # 執行測試（Jest + React Testing Library）
+firebase deploy --only hosting         # 部署至 Firebase Hosting
+npm run eject                          # ⚠️ 不可逆操作，請勿執行
 ```
+
+> **Build 注意**：Windows 路徑大小寫不一致（`D:\claudecode` vs `D:\ClaudeCode`）會造成 ESLint plugin 衝突，建置時必須加 `DISABLE_ESLINT_PLUGIN=true`。
 
 ---
 
@@ -33,6 +37,8 @@ src/
 ├── components/
 │   ├── Navbar.tsx           # 頂部導覽列
 │   ├── TaxiGuide.tsx        # 計程車叫車備查指南（靜態，含點擊複製韓文地址）
+│   ├── CatchTableGuide.tsx  # 韓國訂位 App「캐치테이블」使用指南（靜態）
+│   ├── ToiletGuide.tsx      # 韓國廁所指南（靜態，含韓文關鍵字複製）
 │   ├── home/
 │   │   └── WeatherCard.tsx  # 首頁天氣卡片元件
 │   └── layout/
@@ -77,6 +83,15 @@ scripts/
 - 所有資料存取請透過 `src/lib/storage.ts` 封裝的函式
 - 環境變數存放於 `.env`（不可提交至版本控制）
 
+**權限設計（firestore.rules）：**
+
+| Collection | 可寫入者 |
+|-----------|---------|
+| `expenses`, `twd_expenses` | 任何登入用戶（協作） |
+| `checklists` | 任何登入用戶（協作） |
+| `notes` | 任何登入用戶（協作） |
+| `checklistItems`（行程頁）及其他 | 僅 `abc022778@gmail.com` |
+
 ```
 REACT_APP_FIREBASE_API_KEY=
 REACT_APP_FIREBASE_AUTH_DOMAIN=
@@ -96,7 +111,7 @@ REACT_APP_FIREBASE_APP_ID=
 | 行程 | `SchedulePage.tsx` | 5 天行程，使用 `DayPlanView` 顯示每日 |
 | 清單 | `ChecklistPage.tsx` | 行前準備勾選清單 |
 | 費用 | `ExpensePage.tsx` | 費用記錄與統計 |
-| 筆記 | `NotesPage.tsx` | 計程車指南（`TaxiGuide`）＋自由格式旅遊筆記 |
+| 筆記 | `NotesPage.tsx` | `TaxiGuide`、`CatchTableGuide`、`ToiletGuide` ＋自由格式旅遊筆記 |
 
 ---
 
@@ -126,6 +141,43 @@ REACT_APP_FIREBASE_APP_ID=
 **資料修改位置：**
 - `DAYS` 陣列：各日行程與韓文地址
 - `TIPS` 陣列：叫車技巧內容（支援 HTML `<b>` / `<br>`）
+
+---
+
+## CatchTableGuide 元件說明
+
+`src/components/CatchTableGuide.tsx` 是純靜態元件，放在旅記頁（`NotesPage`）TaxiGuide 之後。
+
+**功能：**
+1. 收折 toggle header
+2. App 安裝與帳號設定步驟（5 步驟）
+3. 訂位清單：各餐廳的訂位狀態（`reserved` / `walk-in` / `tbd`）、店名韓文、備註
+
+**資料修改位置：**
+- `SETUP` 陣列：安裝步驟說明
+- `PLACES` 陣列：各餐廳訂位資訊
+
+---
+
+## ToiletGuide 元件說明
+
+`src/components/ToiletGuide.tsx` 是純靜態元件，放在旅記頁（`NotesPage`）CatchTableGuide 之後。
+
+**功能：**
+1. 收折 toggle header
+2. 韓文關鍵字列表（點擊複製，可貼入地圖搜尋）
+3. 廁所地點說明（便利商店、地鐵站、百貨公司、觀光景點）
+4. 實用技巧
+
+**資料修改位置：**
+- `KEYWORDS` 陣列：韓文搜尋關鍵字
+- `TIPS` 陣列：廁所地點說明
+
+---
+
+## App.tsx 登入流程
+
+`LoginScreen` 元件接受 `loading` prop，登入按鈕在登入進行中會 `disabled`，防止重複點擊。`App` 元件使用 `loggingIn` state 追蹤登入狀態。
 
 ---
 
